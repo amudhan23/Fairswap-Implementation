@@ -53,38 +53,34 @@ type SenderToContractStruct struct{
 func main(){
 
 	//channels
-	channel_senderToMain:=make(chan *bind.TransactOpts)    //Sender sends the "authSender" to the main fn
-	channel_receiverToMain:=make(chan *bind.TransactOpts)		//Receiver sends the "authReceiver" to the main fn
-	channel_SendClientToSender:=make(chan *backends.SimulatedBackend)    //used to send the client created to the sender
-	channel_SendClientToReceiver:=make(chan *backends.SimulatedBackend)		 //used to send the client created to the receiver
 	channel_SenToRec:=make(chan []byte)				//sender sends the byterarray(of Id,Keycommit,EncodedOutputOfGates)
 	channel_RecToMain:=make(chan string)		//Receiver sends a notificaion once he has finished his entire tasks
 
+	//sender address generation
+	authSender,senderAddress := AuthAndAddressGeneration()
+	fmt.Println("\n->Sender\nSender Address :",senderAddress)
 
-	//go routines
-	go Sender(channel_senderToMain,channel_SendClientToSender,channel_SenToRec)
-	go Receiver(channel_receiverToMain,channel_SendClientToReceiver,channel_SenToRec,channel_RecToMain)
-
+	//receiver address generation
+	authReceiver,receiverAddress := AuthAndAddressGeneration()
+	fmt.Println("\n->Receiver\nReceiver Address :",receiverAddress)
 
 	//blockchain creation
-	authSender:=<-channel_senderToMain
-	authReceiver:=<-channel_receiverToMain
 	alloc := make(core.GenesisAlloc)
 	alloc[authSender.From] = core.GenesisAccount{Balance: big.NewInt(1100000000000000000)}  //1.1 ether
 	alloc[authReceiver.From] = core.GenesisAccount{Balance: big.NewInt(2500000000000000000)} //2.5 ether
-
 	//client
 	client := backends.NewSimulatedBackend(alloc,60000000000)
-	channel_SendClientToSender<-client
-	channel_SendClientToReceiver<-client
 
+	//go routines
+	go Sender(authSender,client,channel_SenToRec)
+	go Receiver(authReceiver,client,channel_SenToRec,channel_RecToMain)
 
 	<-channel_RecToMain
-	fmt.Println("\n->Main fn\nProtocol Ends")
+	fmt.Println("\n->Main fn\nInitialization phase protocol Ends")
 
 }
 
-func Sender(channel_senderToMain chan *bind.TransactOpts,channel_SendClientToSender chan *backends.SimulatedBackend,channel_SenToRec chan []byte){
+func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,channel_SenToRec chan []byte){
 
 	//reading from a file "a.txt" and storing bytearray of 32 bytes in inputVectors of size equal to NoOfInputGates
 	fmt.Println("\n->Sender\nBegins")
@@ -97,7 +93,7 @@ func Sender(channel_senderToMain chan *bind.TransactOpts,channel_SendClientToSen
 	var inputVectors [NoOfInputGates][32]byte
 	count:=0
 	for {
-			n,err2 := file.ReadAt(fileBuffer, currentByte)
+			n,err := file.ReadAt(fileBuffer, currentByte)
 			currentByte += BUFFER_SIZE
 			fileBuffer=fileBuffer[:n]
 			if count==NoOfInputGates{
@@ -106,19 +102,13 @@ func Sender(channel_senderToMain chan *bind.TransactOpts,channel_SendClientToSen
 			for j:=0;j<n;j++{
 				inputVectors[count][j]=fileBuffer[j]
 			}
-			if err2 == io.EOF {
-					break
+			if err == io.EOF {
+					log.Fatal(err)
 			}
 			count++
 	}
 	file.Close()
 
-	//sender address generation
-  authSender,senderAddress := AuthAndAddressGeneration()
-	fmt.Println("\n->Sender\nSender Address :",senderAddress)
-  channel_senderToMain<-authSender
-
-	client:=<-channel_SendClientToSender
 
 	//objects
 	var SenToConObject SenderToContractStruct
@@ -160,12 +150,13 @@ func Sender(channel_senderToMain chan *bind.TransactOpts,channel_SendClientToSen
 		SenToConObject.MerkleRootOfCircuit,
 		SenToConObject.MerkleRootOfEncInp,
 	)
-
-	fmt.Println("\n->Sender \n Contract Deployed",)
-
 	if err!=nil{
 		log.Fatal(err)
 	}
+
+	fmt.Println("\n->Sender \n Contract Deployed",)
+
+
 	// commit all pending transactions
 	client.Commit()
 
@@ -183,15 +174,7 @@ func Sender(channel_senderToMain chan *bind.TransactOpts,channel_SendClientToSen
 }
 
 
-func Receiver(channel_receiverToMain chan *bind.TransactOpts,channel_SendClientToReceiver chan *backends.SimulatedBackend,channel_SenToRec chan []byte,channel_RecToMain chan string){
-
-	//receiver address generation
-	fmt.Println("\n->Receiver\nBegins")
-  authReceiver,receiverAddress := AuthAndAddressGeneration()
-	fmt.Println("\n->Receiver\nReceiver Address :",receiverAddress)
-  channel_receiverToMain<-authReceiver
-
-	client:=<-channel_SendClientToReceiver
+func Receiver(authReceiver *bind.TransactOpts,client *backends.SimulatedBackend,channel_SenToRec chan []byte,channel_RecToMain chan string){
 
 	//objects
 	var circuitObjects [TotalNumberOfgates]circuit  //array of circuit object
@@ -203,7 +186,10 @@ func Receiver(channel_receiverToMain chan *bind.TransactOpts,channel_SendClientT
 	fmt.Println("\n->Receiver\nByteArray got from Sender ")
 
 	var Receiver_SenToRecObj SenderToReceiverStruct
-	_ = json.Unmarshal(byteArrayFromSenToRec, &Receiver_SenToRecObj)
+	err:=json.Unmarshal(byteArrayFromSenToRec, &Receiver_SenToRecObj)
+	if err != nil {
+			log.Fatal(err)
+	}
 
 	instance,err := import_contracts.NewFairswap(contractAddress,client)
 	if err != nil {
