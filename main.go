@@ -9,6 +9,7 @@ import(
 	"encoding/json"
 	//"reflect"
 
+	"time"
   //"context"
   "crypto/ecdsa"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
@@ -18,6 +19,7 @@ import(
 	"crypto/rand"
   "github.com/ethereum/go-ethereum/common"
 	"math/big"
+	mathlib "math"
    import_contracts "./contracts"
 )
 
@@ -26,6 +28,7 @@ const BUFFER_SIZE=32
 const TotalNumberOfgates=16
 const MaxLinesToGate=2
 const TotNumOfEncOutVecToMer=16
+const depth=5
 
 var contractAddress common.Address
 
@@ -54,7 +57,9 @@ func main(){
 
 	//channels
 	channel_SenToRec:=make(chan []byte)				//sender sends the byterarray(of Id,Keycommit,EncodedOutputOfGates)
-	channel_RecToMain:=make(chan string)		//Receiver sends a notificaion once he has finished his entire tasks
+	channel_RecToMainIni:=make(chan string)		//Receiver sends a notificaion once he has finished his entire tasks
+	channel_RecToMainRev:=make(chan string)
+	channel_SenToMain:=make(chan string)
 
 	//sender address generation
 	authSender,senderAddress := AuthAndAddressGeneration()
@@ -72,15 +77,21 @@ func main(){
 	client := backends.NewSimulatedBackend(alloc,60000000000)
 
 	//go routines
-	go Sender(authSender,client,channel_SenToRec)
-	go Receiver(authReceiver,client,channel_SenToRec,channel_RecToMain)
+	go Sender(authSender,client,channel_SenToRec,channel_SenToMain)
+	go Receiver(authReceiver,client,channel_SenToRec,channel_RecToMainIni,channel_RecToMainRev)
 
-	<-channel_RecToMain
-	fmt.Println("\n->Main fn\nInitialization phase protocol Ends")
+	SenderMessageToMain:=<-channel_SenToMain
+	fmt.Println("\n->Main fn\n",SenderMessageToMain)
+
+	ReceicverInittilaizationMessage:=<-channel_RecToMainIni
+	fmt.Println("\n->Main fn\n",ReceicverInittilaizationMessage)
+
+	ReceiverRevealMessage:=<-channel_RecToMainRev
+	fmt.Println("\n->Main fn\n",ReceiverRevealMessage)
 
 }
 
-func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,channel_SenToRec chan []byte){
+func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,channel_SenToRec chan []byte,channel_SenToMain chan string){
 
 	//reading from a file "a.txt" and storing bytearray of 32 bytes in inputVectors of size equal to NoOfInputGates
 	fmt.Println("\n->Sender\nBegins")
@@ -110,6 +121,10 @@ func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,chan
 	file.Close()
 
 
+
+	fmt.Println("->Sender\nInputVectors:",inputVectors)
+
+
 	//objects
 	var SenToConObject SenderToContractStruct
 	var SenToRecObject SenderToReceiverStruct
@@ -123,7 +138,7 @@ func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,chan
 	keyCommit:=fnKeycommit(key)
 	MRinp:=createMerkleTree(inputVectors)                          //MRinp (merkle root for input vectors)
 	MRcir:=createMerkleTreeForCir(circuitObjects)									//MRcir (merkle root for ciruit)
-	encodedGateOutputs:=Encode(inputVectors,key,circuitObjects,MRinp)
+	encodedGateOutputs,_:=Encode(inputVectors,key,circuitObjects,MRinp)
 	MRencout:=createMerkleTreeForEncInp(encodedGateOutputs)					//MRencout(merkle root for encoded outputs)
 
 	fmt.Println("\n->Sender \n Key:",key,"\n\nkeyCommit : ",keyCommit,"\n\nMRinp (merkle root for input vectors): ",MRinp,"\n\nMRcir (merkle root for ciruit)",MRcir,"\n\n encodedGateOutputs : ",encodedGateOutputs,"\n\n MRencout(merkle root for encoded outputs) : ",MRencout)
@@ -135,6 +150,12 @@ func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,chan
 	SenToConObject.MerkleRootOfCircuit=MRcir
 	SenToConObject.MerkleRootOfEncInp=MRencout
 
+	a:=[]*big.Int{}
+	for i:=0;i<TotalNumberOfgates;i++{
+		b:=big.NewInt(int64(circuitObjects[i].Operation))
+		a=append(a,b)
+	}
+
 
 	/*SenToRecObject initialize*/
 	idInitializingForRec(&SenToRecObject)
@@ -142,23 +163,22 @@ func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,chan
 	SenToRecObject.EncodedOutputOfGates=encodedGateOutputs
 
 	/*Deploy contract*/
-	contractAddress, _, _, err=import_contracts.DeployFairswap(
+	contractAddress, _,_, err=import_contracts.DeployFairswap(
 		authSender,
 		client,
 		&SenToConObject.Price,
 		SenToConObject.Keycommit,
 		SenToConObject.MerkleRootOfCircuit,
 		SenToConObject.MerkleRootOfEncInp,
+		a,
+
 	)
 	if err!=nil{
 		log.Fatal(err)
 	}
+	client.Commit()
 
 	fmt.Println("\n->Sender \n Contract Deployed",)
-
-
-	// commit all pending transactions
-	client.Commit()
 
 	byteArrayFromSenToRec,err := json.Marshal(SenToRecObject)
 	if err != nil {
@@ -169,12 +189,51 @@ func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,chan
 
 	channel_SenToRec<-byteArrayFromSenToRec
 
-	fmt.Println("\n->Sender\nFinished")
+	fmt.Println("\n->Sender\n Initialization Finished")
+
+	instance,err:= import_contracts.NewFairswap(contractAddress,client)
+	if err != nil {
+			log.Fatal(err)
+	}
+
+
+	RevealedBool:=false
+
+	for i:=0;i<360;i++ {
+		Phase,err:=instance.Phase(nil)
+		if err!=nil{
+			log.Fatal(err)
+		}
+		if(Phase==2){
+			_,err=instance.RevealKey(&bind.TransactOpts{
+					From:authSender.From,
+					Signer:authSender.Signer,
+					Value: nil,
+			},key)
+			if err!=nil{
+				log.Fatal(err)
+			}
+			client.Commit()
+			RevealedBool=true
+			break;
+		}
+		time.Sleep(time.Second *1)
+
+	}
+
+	if(!RevealedBool){
+		fmt.Println("\n->Sender\nReceiver have not accepted within the timeout, Key not Revealed")
+
+	}else{
+			fmt.Println("\n->Sender\nReceiver have accepted within the timeout, Key Revealed")
+	}
+
+	channel_SenToMain<-"Key Workout"
 
 }
 
 
-func Receiver(authReceiver *bind.TransactOpts,client *backends.SimulatedBackend,channel_SenToRec chan []byte,channel_RecToMain chan string){
+func Receiver(authReceiver *bind.TransactOpts,client *backends.SimulatedBackend,channel_SenToRec chan []byte,channel_RecToMainIni chan string,channel_RecToMainRev chan string){
 
 	//objects
 	var circuitObjects [TotalNumberOfgates]circuit  //array of circuit object
@@ -217,16 +276,24 @@ func Receiver(authReceiver *bind.TransactOpts,client *backends.SimulatedBackend,
 		log.Fatal(err)
 	}
 
+
+
+
+
 	boolvalueCircuit:=CheckcreateMerkleTreeForCir(circuitObjects,Receiver_MerkleRootOfCircuit)
 
 	fmt.Println("\n->Receiver\nboolvalueCircuit(comparision between merkleroot of cicuit from contract and calulated circuit merkleroot): ",boolvalueCircuit)
 
-	boolvalueEncode:=CheckcreateMerkleTreeForEncInp(Receiver_SenToRecObj.EncodedOutputOfGates,Receiver_MerkleRootOfEncInp)
+	Receiver_EncodedOutputOfGates:=Receiver_SenToRecObj.EncodedOutputOfGates
+
+	fmt.Println("\n->Receiver\n Receiver_EncodedOutputOfGates",Receiver_EncodedOutputOfGates)
+
+	boolvalueEncode:=CheckcreateMerkleTreeForEncInp(Receiver_EncodedOutputOfGates,Receiver_MerkleRootOfEncInp)
 
 	fmt.Println("\n->Receiver\boolvalueEncode(comparision between merkleroot of encodedGateOutputs from contract and calulated encodedGateOutputs merkleroot): ",boolvalueEncode)
 
 	value:=big.NewInt(9000)
-	gasLimit := uint64(2100000)
+	gasLimit := uint64(2100000000)
 
 	if(boolvalueEncode && boolvalueCircuit){
 	_,err=instance.Accept(&bind.TransactOpts{
@@ -242,9 +309,81 @@ func Receiver(authReceiver *bind.TransactOpts,client *backends.SimulatedBackend,
 
 	client.Commit()
 	fmt.Println("\n->Receiver\nFinished")
+	channel_RecToMainIni<-"Initialization Phase Finished"
 
-	channel_RecToMain<-"finished"
+	receiverAddress,_:=instance.Recieveraddrs(nil)
+	fmt.Println("\n->Receiver\nreceiverAddress",receiverAddress,"\n")
 
+	fmt.Println("\n->Receiver\nInitialization ends")
+
+
+	AcceptedBool:=false
+	var contract_Key [32]byte
+
+	for i:=0;i<360;i++ {
+		Phase,err:=instance.Phase(nil)
+		if err!=nil{
+			log.Fatal(err)
+		}
+		if(Phase==3){
+			contract_Key,err=instance.Key(nil)
+			if err!=nil{
+				log.Fatal(err)
+			}
+			fmt.Println("\n->Receiver\ncontract_Key",contract_Key)
+			AcceptedBool=true
+			break;
+		}
+		time.Sleep(time.Second *1)
+
+	}
+
+
+	if(!AcceptedBool){
+
+			fmt.Println("\n->Receiver\nSender has not revealed the key")
+
+	} else{
+
+		fmt.Println("\n->Receiver\nSender has revealed the key....Proceeding further")
+
+	// for error		Receiver_EncodedOutputOfGates[9][0]=3
+		merkletree:=ReceiverMerkleTreeCreate(Receiver_EncodedOutputOfGates)
+
+		complain,_,index:=Extract(Receiver_EncodedOutputOfGates,contract_Key,circuitObjects,merkletree,Receiver_MerkleRootOfEncInp)
+
+
+		if(index==nil){
+			fmt.Println("\n->Receiver\nNo complain")
+		} else{
+			indexes:=[]*big.Int{}
+			for i:=0;i<len(index);i++{
+				b:=big.NewInt(int64(index[i]))
+				indexes=append(indexes,b)
+			}
+
+				_,err=instance.Complain(&bind.TransactOpts{
+					From:authReceiver.From,
+					Signer:authReceiver.Signer,
+					Value:nil,
+					GasLimit:gasLimit,
+				},complain,indexes)
+				if err!=nil{
+					log.Fatal(err)
+				}
+
+				client.Commit()
+
+		}
+	}
+/*	ComplianBool,err:=instance.ComplianBool(nil)
+	if err!=nil{
+		log.Fatal(err)
+	}
+	fmt.Println("\n\n\n\nComplianBool : ",ComplianBool,"\n\n\n\n")*/
+
+
+	channel_RecToMainRev<-"Reveal Phase Finished"
 }
 
 
@@ -303,6 +442,7 @@ func keyGenerate() ([32]byte){
 		keyGen := make([]byte, 32)
 		var key [32]byte
 
+		//Here
 	  _, err := rand.Read(keyGen)
     if err != nil {
         // handle error here
@@ -413,7 +553,8 @@ func createMerkleTreeForEncInp(encryptedGateOutputs [TotNumOfEncOutVecToMer][32]
 		k=k+2
 	}
 
-	return merkletree[2*TotNumOfEncOutVecToMer-2]  //returns the merkleroot
+	  //returns the merkleroot
+	return merkletree[2*TotNumOfEncOutVecToMer-2]
 }
 
 //fn createMerkleTreeForCir
@@ -491,7 +632,7 @@ func createMerkleTreeForCir(circuitObjects [TotalNumberOfgates]circuit) ([32]byt
 //circuitObjects :  An array of circuit objects that contains info related to eacg gate
 //MRx 					 :  Merkle root of input vectors.Specific to this particular circuit.
 //Returns : An array of encrypted vectors
-func Encode(inputVectors [NoOfInputGates][32]byte,key [32]byte,circuitObjects [TotalNumberOfgates]circuit,MRx [32]byte) ([TotalNumberOfgates][32]byte)  {
+func Encode(inputVectors [NoOfInputGates][32]byte,key [32]byte,circuitObjects [TotalNumberOfgates]circuit,MRx [32]byte) ([TotalNumberOfgates][32]byte,[TotalNumberOfgates][32]byte)  {
 	var out [TotalNumberOfgates][32]byte     //stores the output of each gate
 	var z [TotalNumberOfgates][32]byte			//stores the encryption of each gate's output
 
@@ -545,7 +686,8 @@ func Encode(inputVectors [NoOfInputGates][32]byte,key [32]byte,circuitObjects [T
 			z[i]=Enc(key,out[i])  //encryption function is called
 
 		}
-	return z
+
+	return z,out
 }
 
 //Encrypt function
@@ -710,5 +852,224 @@ func CheckcreateMerkleTreeForEncInp(encryptedGateOutputs [TotNumOfEncOutVecToMer
 			return false
 		}
 	}
+
 	return true
+}
+
+
+
+func Extract(encodedGateOutputs [TotNumOfEncOutVecToMer][32]byte,key [32]byte,circuitObjects [TotalNumberOfgates]circuit,merkletree [2*TotNumOfEncOutVecToMer-1][32]byte,Receiver_MerkleRootOfEncInp [32]byte) ([][depth][32]byte,[][32]byte,[]int) {
+
+	var decodedOutputs [][32]byte
+	var complain [][depth][32]byte
+	var out [32]byte
+	var indices []int
+	for i:=0;i<NoOfInputGates;i++ {
+			out =Dec(key,encodedGateOutputs[i])
+			decodedOutputs = append(decodedOutputs,out)
+	}
+
+	for i:=NoOfInputGates;i<TotalNumberOfgates;i++{
+		noOFinputToThisParticularGate:=len(circuitObjects[i].InputToTheGate)
+
+				var operationInputs [][32]byte
+				for j:=0;j<noOFinputToThisParticularGate;j++{
+
+								operationInputs=append(operationInputs,decodedOutputs[circuitObjects[i].InputToTheGate[j]])
+				}
+
+		out = Dec(key,encodedGateOutputs[i])
+		decodedOutputs=append(decodedOutputs,out)
+
+						if decodedOutputs[i]!=Operation(circuitObjects[i].Operation,operationInputs,decodedOutputs,Receiver_MerkleRootOfEncInp){
+							index:=i
+							indices=append(indices,index)
+							MproofTree:=Mproof(i,merkletree)
+							complain=append(complain,MproofTree)
+							for k:=0;k<noOFinputToThisParticularGate;k++{
+									MproofTree:=Mproof(circuitObjects[i].InputToTheGate[k],merkletree)
+									complain=append(complain,MproofTree)
+									indices=append(indices,circuitObjects[i].InputToTheGate[k])
+							}
+							return complain,decodedOutputs,indices
+					}
+
+
+	}
+	return complain,decodedOutputs,indices
+}
+
+
+func Dec(key [32]byte,encryptedtext [32]byte) ([32]byte){
+			var keyPlusIndex []byte
+
+			k:=0
+			for i:=0;i<len(key);i++{
+				keyPlusIndex=append(keyPlusIndex,key[i])
+			}
+			keyPlusIndex=append(keyPlusIndex,byte(k))
+			key0 := kec.Keccak256(keyPlusIndex)
+
+			var key032 [32]byte
+			for i:=0;i<len(key0);i++{
+				key032[i]=key0[i]
+			}
+
+			var plaintext [32]byte
+			for i:=0;i<32;i++{
+				plaintext[i]=key032[i]^encryptedtext[i]
+			}
+
+			return plaintext
+}
+
+func Mproof(index int,merkletree [2*TotNumOfEncOutVecToMer-1][32]byte) ([depth][32]byte){
+
+	depth:=int(mathlib.Log2(16))+1
+	var tree [5][32]byte
+	tree[0]=merkletree[index]
+	for i:=1;i<depth;i++{
+		if(index%2==0){
+			tree[i]=merkletree[index+1]
+			index=index/2+TotNumOfEncOutVecToMer
+		} else {
+			tree[i]=merkletree[index-1]
+			index=index/2+TotNumOfEncOutVecToMer
+		}
+	}
+	return tree
+
+}
+
+
+func Operation(Op int,operationInputs [][32]byte,decodedOutputs [][32]byte,Receiver_MerkleRootOfEncInp [32]byte)  ([32]byte){
+
+
+		var result [32]byte
+		if(Op==2) {
+				leftsibling:=operationInputs[0]
+				rightsibling:=operationInputs[1]
+				var toBeHashed []byte
+				for j:=0;j<32;j++ {
+						toBeHashed= append(toBeHashed,leftsibling[j])
+				}
+				for j:=0;j<32;j++ {
+						toBeHashed= append(toBeHashed,rightsibling[j])
+				}
+
+				hashed := kec.Keccak256(toBeHashed)
+
+				for j:=0;j<32;j++{
+					result[j]=hashed[j]
+				}
+		}
+
+		//Operation 3: The gate checks the equivalency of the MRx(input parameter) and the input to the gate.
+		if(Op==3) {
+			var merkletreeofdecodedinput1_8 [NoOfInputGates][32]byte
+			for k:=0;k<NoOfInputGates;k++{
+					merkletreeofdecodedinput1_8[k]=decodedOutputs[k]
+			}
+			merklerootofdecodedinput1_8:=createMerkleTree(merkletreeofdecodedinput1_8)
+			for j:=0;j<32;j++{
+				if (j==0){
+						if(operationInputs[0][j]==merklerootofdecodedinput1_8[j]){
+							result[j]=1
+						} else {
+							result[j]=0
+									 }
+						} else {
+							if(operationInputs[0][j]==merklerootofdecodedinput1_8[j]){
+								result[j]=0
+							}	else{
+								result[j]=1
+							}
+				}
+			}
+		}
+		return result
+
+}
+
+func ReceiverMerkleTreeCreate(encryptedGateOutputs [TotNumOfEncOutVecToMer][32]byte) ([2*TotNumOfEncOutVecToMer-1][32]byte){
+	var merkletree [2*TotNumOfEncOutVecToMer-1][32]byte
+
+	//input gates
+	//no hashing of the input vectors to the fn.
+	for i:=0;i<TotNumOfEncOutVecToMer;i++{
+		for j:=0;j<32;j++{
+				merkletree[i][j]=encryptedGateOutputs[i][j]
+		}
+	}
+
+	//!inputgates
+	//merkle tree construction
+	k:=0
+	for i:=0;i<TotNumOfEncOutVecToMer-1;i++{
+
+		var toBeHashed []byte
+		var Hashed []byte
+		for j:=0;j<32;j++{
+			toBeHashed=append(toBeHashed,merkletree[k][j])
+		}
+
+		for j:=0;j<32;j++{
+			toBeHashed=append(toBeHashed,merkletree[k+1][j])
+		}
+
+		Hashed=kec.Keccak256(toBeHashed) //Hashing of concatenated input
+
+		for j:=0;j<32;j++{
+			merkletree[i+TotNumOfEncOutVecToMer][j]=Hashed[j]
+		}
+		k=k+2
+	}
+
+	return merkletree  //returns the merkleroot
+}
+
+
+func Mverify(complaint [depth][32]byte,_index int,ciphertextRoot [32]byte) (bool){
+	_value:=complaint[0]
+
+	var Hashed []byte
+	var i uint
+	for i=0; i<depth-1; i++{
+		if ((_index & (1<<i))>>i == 1)	{
+
+			var toBeHashed []byte
+			for j:=0;j<32;j++{
+				toBeHashed=append(toBeHashed,complaint[i+1][j])
+			}
+			for j:=0;j<32;j++{
+				toBeHashed=append(toBeHashed, _value[j])
+			}
+
+			Hashed = kec.Keccak256(toBeHashed)
+
+			for j:=0;j<32;j++{
+				_value[j]=Hashed[j]
+
+			}
+
+		}else{
+
+			var toBeHashed []byte
+			for j:=0;j<32;j++{
+				toBeHashed=append(toBeHashed,_value[j])
+			}
+			for j:=0;j<32;j++{
+				toBeHashed=append(toBeHashed,complaint[i+1][j])
+			}
+
+			Hashed = kec.Keccak256(toBeHashed)
+
+			for j:=0;j<32;j++{
+				_value[j]=Hashed[j]
+			}
+
+		}
+
+	}
+	return (_value==ciphertextRoot)
 }
