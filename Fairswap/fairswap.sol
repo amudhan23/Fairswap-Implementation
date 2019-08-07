@@ -9,7 +9,6 @@ contract fairswap{
 	uint public price;						//price of the digital good
 	bytes32 public commitmentOfKey; // commitment of the key
 	bytes32 public key;			//key
-	bytes32 public receiverEntryKey;  //the entry key for the receiver
 	uint public Now; //to get the current time
 	uint public depth; //the depth of the merkle tree of encoded inputs
 	uint public totalNumberOfGates;
@@ -31,26 +30,20 @@ contract fairswap{
 		timeout=now/10+ 10 seconds;
 	}
 
-	constructor(uint _price, bytes32 _commitmentOfKey, bytes32  _EncInputRoot, bytes32 _EncCircuitRoot, bytes32 _receiverEntryKey,uint _totalNumberOfGates,uint _maxInputLinesToAGate) public{
+	constructor(uint _price, bytes32 _commitmentOfKey, bytes32  _EncInputRoot, bytes32 _EncCircuitRoot,uint _totalNumberOfGates,uint _maxInputLinesToAGate) public{
 
 		senderAddress=msg.sender;
 		price = _price;
 		commitmentOfKey = _commitmentOfKey;
 		EncInputRoot = _EncInputRoot;
 		EncCircuitRoot = _EncCircuitRoot;
-		receiverEntryKey=_receiverEntryKey;
 		totalNumberOfGates=_totalNumberOfGates;
 		maxInputLinesToAGate=_maxInputLinesToAGate;
 		depth=log2(totalNumberOfGates)+1;
 		nextStage();
 	}
 
-	//the receiver with the help of entry key initializes the receiverAddress.
-function initializeRecieverAddress(bytes32  recEntryKey) public{
-	require(receiverEntryKey==recEntryKey);
-	receiverAddress=msg.sender;
 
-}
 
 //modifier to check the eligibility of party, time and phase for a function execution
 modifier allowed(address _party,stage _stage){
@@ -64,7 +57,7 @@ modifier allowed(address _party,stage _stage){
 //If receiver pays the required ether,then the stage goes from initialized to accepted.
 //In the case when receiver pays lesser amount,the ehter is transferred back to the receiver
 //and the stage goes from initialized to finishedAndMaliciousReciever
-function accept() allowed(receiverAddress,stage.initialized) payable public {
+function accept() allowed(msg.sender,stage.initialized) payable public {
 
 	if(msg.value < price)
 	{
@@ -73,6 +66,7 @@ function accept() allowed(receiverAddress,stage.initialized) payable public {
 	}
 	else
 	{
+		receiverAddress=msg.sender;
 		nextStage();
 	}
 }

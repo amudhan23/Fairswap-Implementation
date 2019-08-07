@@ -7,9 +7,10 @@ import(
 	"io"
 	"log"
 	"reflect"
-	"context"
+	//"context"
 	"time"
 	"encoding/json"
+	"sync"
 	//"github.com/ethereum/go-ethereum/core"
 	mathlib "math"
 	"crypto/rand"
@@ -17,6 +18,7 @@ import(
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/crypto"
 	"crypto/ecdsa"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"math/big"
@@ -37,7 +39,6 @@ var contractAddress common.Address
 
 type SenderToReceiverStruct struct {
 		EncryptedOutputOfGates [totalNumberOfGates][]byte
-		ReceiverEntryKey [keyLength]byte
 }
 
 type SenderToContractStruct struct{
@@ -45,26 +46,30 @@ type SenderToContractStruct struct{
 	Keycommit [hashFunctionOutputBitSize]byte
 	MerkleRootOfCircuit [hashFunctionOutputBitSize]byte
 	MerkleRootOfEncInp [hashFunctionOutputBitSize]byte
-	ConReceiverEntryKey [keyLength]byte
 	TotalNumberOfGates big.Int
 	MaxInputLinesToAGate big.Int
 }
 
 func main(){
 
-		//channels
-		channel_SenToRec:=make(chan []byte)				//sender sends the byterarray(of
-		channel_RecToMainIni:=make(chan string)		//Receiver sends a notificaion once he has finished his entire tasks
-		channel_RecToMainRev:=make(chan string)
-		channel_SenToMain:=make(chan string)
+		channel_SenToRec:=make(chan []byte)
+
+		//logging file
+		/*f, err := os.OpenFile("text1.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+		    log.Fatalf("error opening file: %v", err)
+		}
+		defer f.Close()
+		wrt := io.MultiWriter(os.Stdout, f)
+		log.SetOutput(wrt)*/
 
 		//sender address generation
-		authSender,senderAddress := AuthAndAddressGeneration()
-		fmt.Println("\n->Sender\nSender Address :",senderAddress)
+		authSender,_ := AuthAndAddressGeneration()
+		//log.Println("\n->Sender\nSender Address :",senderAddress)
 
 		//receiver address generation
-		authReceiver,receiverAddress := AuthAndAddressGeneration()
-		fmt.Println("\n->Receiver\nReceiver Address :",receiverAddress)
+		authReceiver,_ := AuthAndAddressGeneration()
+		//log.Println("\n->Receiver\nReceiver Address :",receiverAddress)
 
 		//blockchain creation
 		alloc := make(core.GenesisAlloc)
@@ -74,36 +79,28 @@ func main(){
 		client := backends.NewSimulatedBackend(alloc,60000000000)
 
 		//Calculating sender and receiver initial account balances
-		senderInitialBalance, err := client.BalanceAt(context.Background(),senderAddress, nil)
+		/*senderInitialBalance, err := client.BalanceAt(context.Background(),senderAddress, nil)
 		if err != nil{
 				log.Fatal(err)
 		}
-		fmt.Println("-->Main\nSenderInitialAccaountBalance : ",senderInitialBalance,"\n")
+		fmt.Println("\n-->Main\nSenderInitialAccaountBalance : ",senderInitialBalance,"\n")
 
 		receiverInitialBalance, err := client.BalanceAt(context.Background(),receiverAddress, nil)
 		if err != nil{
 				log.Fatal(err)
 		}
-		fmt.Println("-->Main\nReceiverInitialAccountBalance : ",receiverInitialBalance,"\n")
+		fmt.Println("-->Main\nReceiverInitialAccountBalance : ",receiverInitialBalance,"\n")*/
 
-
+		var wg sync.WaitGroup
+		wg.Add(2)
 		//go routines
-		go Sender(authSender,client,channel_SenToRec,channel_SenToMain)
-		go maliciousReceiver_WrongComplain(authReceiver,client,channel_SenToRec,channel_RecToMainIni,channel_RecToMainRev)
+		go Sender(authSender,client,channel_SenToRec,&wg)
+		go Receiver(authReceiver,client,channel_SenToRec,&wg)
 
 
-		//channels... Parties communicate to the main function
-		ReceicverInittilaizationMessage:=<-channel_RecToMainIni
-		fmt.Println("\n->Main fn\n",ReceicverInittilaizationMessage)
-
-		SenderMessageToMain:=<-channel_SenToMain
-		fmt.Println("\n->Main fn\n",SenderMessageToMain)
-
-		ReceiverRevealMessage:=<-channel_RecToMainRev
-		fmt.Println("\n->Main fn\n",ReceiverRevealMessage)
-
+		wg.Wait()
 		//getting the parties account balance at the end of protocol
-		senderFinalBalance, err := client.BalanceAt(context.Background(),senderAddress, nil)
+		/*senderFinalBalance, err := client.BalanceAt(context.Background(),senderAddress, nil)
 		if err != nil{
 				log.Fatal(err)
 		}
@@ -116,38 +113,17 @@ func main(){
 				log.Fatal(err)
 		}
 		receiverDifferenceInFinalAndInitialBalance:=new(big.Int).Sub(receiverInitialBalance,receiverFinalBalance)
-		fmt.Println("\n-->Main\nReceiverFinalAccountBalance : ",receiverFinalBalance,"\nReceiverDifferenceInFinalAndInitialBalance : ",receiverDifferenceInFinalAndInitialBalance ,"\n")
+		fmt.Println("\n-->Main\nReceiverFinalAccountBalance : ",receiverFinalBalance,"\nReceiverDifferenceInFinalAndInitialBalance : ",receiverDifferenceInFinalAndInitialBalance ,"\n")*/
+
 
 }
 
 
-func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,channel_SenToRec chan []byte,channel_SenToMain chan string){
+func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,channel_SenToRec chan []byte,wg *sync.WaitGroup){
 
+	sender_round1_computingTime_calculatingVariables_start := time.Now()
 
-	var currentByte int64 = 0
-	fileBuffer := make([]byte, buffer_size)
-	file, err := os.Open("a.txt") // For read access.
-	if err != nil {
-			log.Fatal(err)
-	}
-	var inputVectors [noOfInputGates][buffer_size]byte
-	count:=0
-	for {
-			n,err := file.ReadAt(fileBuffer, currentByte)
-			currentByte += buffer_size
-			fileBuffer=fileBuffer[:n]
-			if count==noOfInputGates{
-					break
-			}
-			for j:=0;j<n;j++{
-				inputVectors[count][j]=fileBuffer[j]
-			}
-			if err == io.EOF {
-					log.Fatal(err)
-			}
-			count++
-	}
-	file.Close()
+	inputVectors:=FileRead()
 
 	var SenToConObject SenderToContractStruct
 	var SenToRecObject SenderToReceiverStruct
@@ -160,7 +136,6 @@ func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,chan
 	MRinp:=createMerkleRootForInputVectors(inputVectors)
 	encodedGateOutputs,_:=Encode(inputVectors,key,gateTuples,MRinp)
 	MRencout:=createMerkleRootForEncInp(encodedGateOutputs)
-	recEntryKey:=keyGenerate()
 
 	setPrice(&SenToConObject)
 	setTotalNumberOfGates(&SenToConObject)
@@ -168,16 +143,21 @@ func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,chan
 	SenToConObject.Keycommit=keyCommit
 	SenToConObject.MerkleRootOfEncInp=MRencout
 	SenToConObject.MerkleRootOfCircuit=MRgateTuples
-	SenToConObject.ConReceiverEntryKey=recEntryKey
 
-	contractAddress, _,_, err=import_contracts.DeployFairswap(
+	sender_round1_computingTime_calculatingVariables_stop:=time.Now()
+
+	fmt.Printf("\nsender_round1_computingTime_calculatingVariables_time : %v \n", sender_round1_computingTime_calculatingVariables_stop.Sub(sender_round1_computingTime_calculatingVariables_start))
+
+	var err error
+	var tx *types.Transaction
+	sender_round1_commitTime_deployingContract_start := time.Now()
+  contractAddress,tx,_, err=import_contracts.DeployFairswap(
 		authSender,
 		client,
 		&SenToConObject.Price,
 		SenToConObject.Keycommit,
 		SenToConObject.MerkleRootOfEncInp,
 		SenToConObject.MerkleRootOfCircuit,
-		SenToConObject.ConReceiverEntryKey,
 		&SenToConObject.TotalNumberOfGates,
 		&SenToConObject.MaxInputLinesToAGate,
 	)
@@ -185,19 +165,32 @@ func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,chan
 		log.Fatal(err)
 	}
 	client.Commit()
+	sender_round1_commitTime_deployingContract_stop := time.Now()
+	fmt.Printf("\nsender_round1_commitTime_deployingContract_time : %v \n", sender_round1_commitTime_deployingContract_stop.Sub(sender_round1_commitTime_deployingContract_start))
+	log.SetPrefix("\nGas Cost ")
+	log.Println("Sender Round 1 : ",tx.Gas())
+
+	sender_round1_communicationTime_sendingEncryptedGateOutputs_start := time.Now()
 
 	SenToRecObject.EncryptedOutputOfGates=encodedGateOutputs
-	SenToRecObject.ReceiverEntryKey=recEntryKey
 	byteArrayFromSenToRec,err := json.Marshal(SenToRecObject)
 	if err != nil {
-		fmt.Println("error:", err)
+		//log.Println("error:", err)
 	}
 
 	channel_SenToRec<-byteArrayFromSenToRec
-	fmt.Println("\n->Sender \nByteArray sent to Receiver")
-	fmt.Println("\n->Sender\n Initialization Finished")
+
+	sender_round1_communicationTime_sendingEncryptedGateOutputs_stop := time.Now()
+
+	fmt.Printf("\nsender_round1_communicationTime_sendingEncryptedGateOutputs_time : %v \n", sender_round1_communicationTime_sendingEncryptedGateOutputs_stop.Sub(sender_round1_communicationTime_sendingEncryptedGateOutputs_start))
+
+	//log.Println("\n->Sender \nByteArray sent to Receiver")
 
 	//creating a contract instance
+
+	sender_round2_waitingTime_forReceiverToAccept_start := time.Now()
+
+
 	instance,err:= import_contracts.NewFairswap(contractAddress,client)
 	if err != nil {
 			log.Fatal(err)
@@ -214,29 +207,30 @@ func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,chan
 			break;
 		}
 		if(Phase==6){
-			fmt.Println("\n->Sender\nReceiver has not paid enough ether")
-			channel_SenToMain<-"Malicious Receiver-Dind't pay enough ether "
+			//log.Println("\n->Sender\nReceiver has not paid enough ether")
 			break;
 		}
 		time.Sleep(time.Second *1)
 
 	}
 
+	sender_round2_waitingTime_forReceiverToAccept_stop := time.Now()
+
+	fmt.Printf("\nsender_round2_waitingTime_forReceiverToAccept_time : %v \n", sender_round2_waitingTime_forReceiverToAccept_stop.Sub(sender_round2_waitingTime_forReceiverToAccept_start))
+
 	Phase,err:=instance.Phase(nil)
 	if err!=nil{
 			log.Fatal(err)
 	}
 	if(Phase==1){
-		fmt.Println("\n->Sender\nReceiver hasnt accepted within time")
-		channel_SenToMain<-"Either the reciever is not interested now"
+		//log.Println("\n->Sender\nReceiver hasnt accepted within time")
 	}else{
 
 			if(!RevealedBool){
-				channel_SenToMain<-"Receiver has not accepted within the timeout, Key not Revealed"
-
 			}else{
 
-							_,err=instance.RevealKey(&bind.TransactOpts{
+							sender_round3_commitTime_revealKey_start := time.Now()
+						  tx,err=instance.RevealKey(&bind.TransactOpts{
 									From:authSender.From,
 									Signer:authSender.Signer,
 									Value: nil,
@@ -244,7 +238,12 @@ func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,chan
 							if err!=nil{
 								log.Fatal(err)
 							}
+							//log.Println("\n->Sender\nKeyRevealed")
+							sender_round3_commitTime_revealKey_stop := time.Now()
+							fmt.Printf("\nsender_round3_commitTime_revealKey_time : %v \n", sender_round3_commitTime_revealKey_stop.Sub(sender_round3_commitTime_revealKey_start))
 							client.Commit()
+							log.SetPrefix("\nGas Cost ")
+							log.Println("Sender Round 3 : ",tx.Gas())
 					}
 
 			//The contract is in keyRevealed stage
@@ -254,6 +253,9 @@ func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,chan
 			//				"Receiver Wrong complaint" to the main function and finishes the protocol.
 			//case 2 : If the receiver doesn't respond, then the stage contract stage is still in keyRevealed and the sender gets the ether
 			//				 after the waitingTime
+
+			sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_start:=time.Now()
+
 			for i:=0;i<waitingTime;i++ {
 
 					Phase,err:=instance.Phase(nil)
@@ -261,20 +263,20 @@ func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,chan
 						log.Fatal(err)
 					}
 					if(Phase==6){
-						fmt.Println("\n->Sender\nReceiver has made a wrong complaint")
-						channel_SenToMain<-"Receiver Wrong complaint "
+						//log.Println("\n->Sender\nReceiver has made a wrong complaint")
 						break;
 					}
 					if(Phase==5){
-						fmt.Println("\n->Sender\nIt seems I have made a mistake")
-						channel_SenToMain<-"Sender has wrongly encrypted filechunks"
+						//log.Println("\n->Sender\nIt seems I have made a mistake(Wrong Encryption)")
 						break
 					}
 					time.Sleep(time.Second *1)
 			}
+			sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_stop:=time.Now()
+
+			fmt.Printf("\nsender_round4_waitingTime_forReceiverToApproveOrProduceComplain_time : %v \n", sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_stop.Sub(sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_start))
 
 			gasLimit := uint64(2100000000)
-
 			//the sender getting the ether
 			Phase,err:=instance.Phase(nil)
 			if err!=nil{
@@ -282,6 +284,8 @@ func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,chan
 			}
 
 			if(Phase==3){
+
+				sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_start:=time.Now()
 			_,err=instance.SenderGetEther(&bind.TransactOpts{
 					From:authSender.From,
 					Signer:authSender.Signer,
@@ -291,17 +295,32 @@ func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,chan
 			if err!=nil{
 						log.Fatal(err)
 			}
+			log.SetPrefix("\nGas Cost ")
+			log.Println("Sender Round 4 ",tx.Gas())
+			sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_stop:=time.Now()
+			fmt.Printf("\nsender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_time : %v \n", sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_stop.Sub(sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_start))
 
+			//log.Println("\n->Sender\nProtocol completed Successfully")
 			//the protocol gets finished and the sender sends the message to the main function
-			channel_SenToMain<-"Protocol2 completed.Sender Got the money"
 			}
 	}
+	wg.Done()
 }
 
 //channel_RecToMainRev(chan string) - to notify the main function for the completion of reveal phase
-func Receiver(authReceiver *bind.TransactOpts,client *backends.SimulatedBackend,channel_SenToRec chan []byte,channel_RecToMainIni chan string,channel_RecToMainRev chan string){
+func Receiver(authReceiver *bind.TransactOpts,client *backends.SimulatedBackend,channel_SenToRec chan []byte,wg *sync.WaitGroup){
 
+	receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_start := time.Now()
+	//log.Println("\n->Receiver\n Begins")
 	byteArrayFromSenToRec:=<-channel_SenToRec
+
+	receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_stop := time.Now()
+	fmt.Printf("\nreceiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : %v \n", receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_stop.Sub(receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_start))
+
+
+	//log.Println("\n->Receiver\nByteArray got from sender")
+
+	receiver_round1_computingTime_merkleRootCheck_start := time.Now()
 
 	var Receiver_SenToRecObj SenderToReceiverStruct
 	err:=json.Unmarshal(byteArrayFromSenToRec, &Receiver_SenToRecObj)
@@ -330,27 +349,23 @@ func Receiver(authReceiver *bind.TransactOpts,client *backends.SimulatedBackend,
 	boolValueEncryptedGateOutput:=checkMerkleRootForEncInp(Receiver_EncryptedOutputOfGates,Receiver_MerkleRootOfEncInp)
 	boolValueEncryptedGateTuples:=checkMerkleRootForGateTuples(gateTuples,Receiver_MerkleRootOfGateTuples)
 
-	fmt.Println("\n->Receiver\nboolValueEncryptedGateOutput(comparision between merkleroot of encryptedGateOutputs from contract and calulated encryptedGateOutputs merkleroot): ",boolValueEncryptedGateOutput)
-	fmt.Println("\n->Receiver\nboolValueEncryptedGateTuples(comparision between merkleroot of encryptedGateTuples from contract and calulated encryptedGateTuples merkleroot): ",boolValueEncryptedGateTuples)
+	receiver_round1_computingTime_merkleRootCheck_stop := time.Now()
+	fmt.Printf("\nreceiver_round1_computingTime_merkleRootCheck_time : %v \n", receiver_round1_computingTime_merkleRootCheck_stop.Sub(receiver_round1_computingTime_merkleRootCheck_start))
+
+	//log.Println("\n->Receiver\nboolValueEncryptedGateOutput(comparision between merkleroot of encryptedGateOutputs from contract and calulated encryptedGateOutputs merkleroot): ",boolValueEncryptedGateOutput)
+	//log.Println("\n->Receiver\nboolValueEncryptedGateTuples(comparision between merkleroot of encryptedGateTuples from contract and calulated encryptedGateTuples merkleroot): ",boolValueEncryptedGateTuples)
 
 	if(boolValueEncryptedGateOutput && boolValueEncryptedGateTuples){
 
 				//the boolValueEncode was true, so the receiver calls the accept contract function and pays the required price
-			_,err=instance.InitializeRecieverAddress(&bind.TransactOpts{
-				From:authReceiver.From,
-				Signer:authReceiver.Signer,
-				Value: nil,
-			},Receiver_SenToRecObj.ReceiverEntryKey)
-			if err!=nil{
-					log.Fatal(err)
-			}
 
-			client.Commit()
 
-			value:=big.NewInt(100)
+			value:=big.NewInt(1060)
 			gasLimit := uint64(230000000)
 
-			_	,err=instance.Accept(&bind.TransactOpts{
+		 receiver_round2_commitTime_Accept_start := time.Now()
+
+			tx,err:=instance.Accept(&bind.TransactOpts{
 				From:authReceiver.From,
 				Signer:authReceiver.Signer,
 				Value:value,
@@ -361,10 +376,13 @@ func Receiver(authReceiver *bind.TransactOpts,client *backends.SimulatedBackend,
 			}
 
 			client.Commit()
+			receiver_round2_commitTime_Accept_stop := time.Now()
+			fmt.Printf("\nreceiver_round2_commitTime_Accept_time : %v \n", receiver_round2_commitTime_Accept_stop.Sub(receiver_round2_commitTime_Accept_start))
 
-			fmt.Println("\n->Receiver\n Finished Accepting")
-			channel_RecToMainIni<-"Accepted stage got over"
+			log.SetPrefix("\nGas Cost ")
+			log.Println("Receiver Round 2 : ",tx.Gas())
 
+			//log.Println("\n->Receiver\n Accepted")
 
 			//The contract is in accepted stage
 			//The sender
@@ -372,6 +390,9 @@ func Receiver(authReceiver *bind.TransactOpts,client *backends.SimulatedBackend,
 			//case 2 : The sender doesn't reveal the key within time. AcceptedBool remains false after the for loop. Receiver later calls the contract function
 			//			   ReceiverGetEther to get the ether.
 			//case 3 : The sender has revealed the correct key within time.The contract stage goes to keyRevealed and AcceptedBool is true after the for loop.
+
+
+		receiver_round3_waitingTime_forSenderToRevealKey_start := time.Now()
 			AcceptedBool:=false
 			var contract_Key [keyLength]byte
 			for i:=0;i<waitingTime;i++ {
@@ -384,25 +405,25 @@ func Receiver(authReceiver *bind.TransactOpts,client *backends.SimulatedBackend,
 					if err!=nil{
 						log.Fatal(err)
 					}
-					fmt.Println("\n->Receiver\ncontract_Key",contract_Key)
 					AcceptedBool=true
 					break;
 				}
 
 				if(Phase==5){
-					fmt.Println("\n->Receiver\nSender Has revealed the wrong key")
-					channel_RecToMainRev<-"Wrong key revealed"
-
+					//log.Println("\n->Receiver\nSender Has revealed the wrong key")
 				}
 				time.Sleep(time.Second *1)
 
 			}
+			receiver_round3_waitingTime_forSenderToRevealKey_stop := time.Now()
+			fmt.Printf("\nreceiver_round3_waitingTime_forSenderToRevealKey_time : %v \n", receiver_round3_waitingTime_forSenderToRevealKey_stop.Sub(receiver_round3_waitingTime_forSenderToRevealKey_start))
+
 
 
 			if(!AcceptedBool){
 
-					fmt.Println("\n->Receiver\nSender has not revealed the key...ReceiverGetEther function called")
-					gasLimit := uint64(2100000000)
+					//log.Println("\n->Receiver\nSender has not revealed the key...ReceiverGetEther function called")
+					gasLimit := uint64(4500000000)
 
 					//the receiver getting the ether
 					_,err=instance.ReceiverGetEther(&bind.TransactOpts{
@@ -416,26 +437,30 @@ func Receiver(authReceiver *bind.TransactOpts,client *backends.SimulatedBackend,
 					}
 					client.Commit()
 
-					channel_RecToMainRev<-"Sender hasn't revealed the key within the Timeout"
-
 			} else{
 
-				fmt.Println("\n->Receiver\nSender has revealed the key....Proceeding further")
+				//log.Println("\n->Receiver\nSender has revealed the key....Proceeding further")
+
+				receiver_round4_computingTime_extraction_start := time.Now()
 
 				merkleTreeForGateTuples:=createMerkleTreeForGateTuples(gateTuples)
 			 	merkleTreeForEncInp:=createMerkleTreeForEncInp(Receiver_SenToRecObj.EncryptedOutputOfGates)
 
-			 	complain,decodedOutputs,gateComplain,encodedVectors_ThisGate :=Extract(Receiver_SenToRecObj.EncryptedOutputOfGates,contract_Key,gateTuples,merkleTreeForEncInp,merkleTreeForGateTuples,Receiver_MerkleRootOfEncInp,Receiver_MerkleRootOfGateTuples)
+			 	complain,_,gateComplain,encodedVectors_ThisGate :=Extract(Receiver_SenToRecObj.EncryptedOutputOfGates,contract_Key,gateTuples,merkleTreeForEncInp,merkleTreeForGateTuples,Receiver_MerkleRootOfEncInp,Receiver_MerkleRootOfGateTuples)
 
-				fmt.Println("\n->Receiver\nDecoded Ouptuts : ",decodedOutputs)
+				receiver_round4_computingTime_extraction_stop := time.Now()
+				fmt.Printf("\nreceiver_round4_computingTime_extraction_time : %v \n", receiver_round4_computingTime_extraction_stop.Sub(receiver_round4_computingTime_extraction_start))
+				//log.Println("\n->Receiver\nDecoded Ouptuts : ",decodedOutputs)
 
 				if(complain==nil){
-					fmt.Println("\n->Receiver\nNo complain")
-					channel_RecToMainRev<-"Receiver Finished Protocol "
+						log.SetPrefix("\nGas Cost ")
+						log.Println("Receiver Round 4 : ",0)
+					//log.Println("\n\n->Receiver\n Finished Protocol")
 				} else{
 
 						//complain function being called
-						_,err=instance.Complain(&bind.TransactOpts{
+						receiver_round4_commitTime_complain_start := time.Now()
+						tx,err:=instance.Complain(&bind.TransactOpts{
 							From:authReceiver.From,
 							Signer:authReceiver.Signer,
 							Value:nil,
@@ -445,24 +470,29 @@ func Receiver(authReceiver *bind.TransactOpts,client *backends.SimulatedBackend,
 							log.Fatal(err)
 						}
 						client.Commit()
+						receiver_round4_commitTime_complain_stop := time.Now()
+						fmt.Printf("\nreceiver_round4_commitTime_complain_time : %v \n", receiver_round4_commitTime_complain_stop.Sub(receiver_round4_commitTime_complain_start))
+
+						log.SetPrefix("\nGas Cost ")
+						log.Println("Receiver Round 4 : ",tx.Cost())
 
 						Phase,err:=instance.Phase(nil)
 						if err!=nil{
 							log.Fatal(err)
 						}
 						if(Phase==5){
-							fmt.Println("\n->Receiver\nSender Has wrongly calulated the encrypted inputs")
-							channel_RecToMainRev<-"Wrong encrypted inputs"
-
+							//fmt.Println("\n->Receiver\nSender Has wrongly calulated the encrypted inputs")
 						}
 				}
 			}
-			channel_RecToMainRev<-"Reveal Phase Finished"
 		}	else{
-
-				channel_RecToMainIni<-"Sender sent wrong encodedGateOutputs,not equal to contract encodedGateOutputs merkleroot,Not gone into accepted stage"
-				channel_RecToMainRev<-"Sender sent wrong encodedGateOutputs,not equal to contract encodedGateOutputs merkleroot,Not gone into revealed phase"
+			if(!boolValueEncryptedGateOutput){
+						//log.Println("\n->Receiver\nThe calculated merkle root of encrypted gate outputs and merkle root of encrypted gate outputs got from the contract didn't match")
+					} else{
+							//log.Println("\n->Receiver\nThe calculated merkle root of gate tuples and merkle root of egate tuples got from the contract didn't match")
+					}
 		}
+		wg.Done()
 }
 
 func AuthAndAddressGeneration() (*bind.TransactOpts,common.Address){
@@ -473,7 +503,7 @@ func AuthAndAddressGeneration() (*bind.TransactOpts,common.Address){
   }
   auth:=bind.NewKeyedTransactor(privateKey)
 
-	//fmt.Println(reflect.TypeOf(auth))
+	////log.Println(reflect.TypeOf(auth))
 
   publicKey := privateKey.Public()
   publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
@@ -484,6 +514,33 @@ func AuthAndAddressGeneration() (*bind.TransactOpts,common.Address){
   return auth,address
 }
 
+func FileRead() ([noOfInputGates][buffer_size]byte){
+	var currentByte int64 = 0
+	fileBuffer := make([]byte, buffer_size)
+	file, err := os.Open("a.txt")
+	if err != nil {
+			log.Fatal(err)
+	}
+	var FileChunks [noOfInputGates][buffer_size]byte
+	count:=0
+	for {
+			n,err := file.ReadAt(fileBuffer, currentByte)
+			currentByte += buffer_size
+			fileBuffer=fileBuffer[:n]
+			if count==noOfInputGates{
+					break
+			}
+			for j:=0;j<n;j++{
+				FileChunks[count][j]=fileBuffer[j]
+			}
+			if err == io.EOF {
+					log.Fatal(err)
+			}
+			count++
+	}
+	file.Close()
+	return FileChunks
+}
 
 func fnKeycommit(key [keyLength]byte) ([hashFunctionOutputBitSize]byte){
 
@@ -1341,33 +1398,10 @@ func Mverify(complaint [][32]byte,_index int,ciphertextRoot [32]byte) (bool){
 	return (_value==ciphertextRoot)
 }
 
-func maliciousSender_WrongEncryption(authSender *bind.TransactOpts,client *backends.SimulatedBackend,channel_SenToRec chan []byte,channel_SenToMain chan string){
+func maliciousSender_WrongEncryption(authSender *bind.TransactOpts,client *backends.SimulatedBackend,channel_SenToRec chan []byte,wg *sync.WaitGroup){
 
-
-	var currentByte int64 = 0
-	fileBuffer := make([]byte, buffer_size)
-	file, err := os.Open("a.txt") // For read access.
-	if err != nil {
-			log.Fatal(err)
-	}
-	var inputVectors [noOfInputGates][buffer_size]byte
-	count:=0
-	for {
-			n,err := file.ReadAt(fileBuffer, currentByte)
-			currentByte += buffer_size
-			fileBuffer=fileBuffer[:n]
-			if count==noOfInputGates{
-					break
-			}
-			for j:=0;j<n;j++{
-				inputVectors[count][j]=fileBuffer[j]
-			}
-			if err == io.EOF {
-					log.Fatal(err)
-			}
-			count++
-	}
-	file.Close()
+	//log.Println("\n->Sender\nBegins")
+	inputVectors:=FileRead()
 
 	var SenToConObject SenderToContractStruct
 	var SenToRecObject SenderToReceiverStruct
@@ -1380,7 +1414,6 @@ func maliciousSender_WrongEncryption(authSender *bind.TransactOpts,client *backe
 	MRinp:=createMerkleRootForInputVectors(inputVectors)
 	encodedGateOutputs,_:=Encode(inputVectors,key,maliciousGateTuples,MRinp)
 	MRencout:=createMerkleRootForEncInp(encodedGateOutputs)
-	recEntryKey:=keyGenerate()
 
 	setPrice(&SenToConObject)
 	setTotalNumberOfGates(&SenToConObject)
@@ -1388,16 +1421,16 @@ func maliciousSender_WrongEncryption(authSender *bind.TransactOpts,client *backe
 	SenToConObject.Keycommit=keyCommit
 	SenToConObject.MerkleRootOfEncInp=MRencout
 	SenToConObject.MerkleRootOfCircuit=MRgateTuples
-	SenToConObject.ConReceiverEntryKey=recEntryKey
 
-	contractAddress, _,_, err=import_contracts.DeployFairswap(
+	var err error
+	var tx *types.Transaction
+  contractAddress,tx,_, err=import_contracts.DeployFairswap(
 		authSender,
 		client,
 		&SenToConObject.Price,
 		SenToConObject.Keycommit,
 		SenToConObject.MerkleRootOfEncInp,
 		SenToConObject.MerkleRootOfCircuit,
-		SenToConObject.ConReceiverEntryKey,
 		&SenToConObject.TotalNumberOfGates,
 		&SenToConObject.MaxInputLinesToAGate,
 	)
@@ -1405,17 +1438,17 @@ func maliciousSender_WrongEncryption(authSender *bind.TransactOpts,client *backe
 		log.Fatal(err)
 	}
 	client.Commit()
+	log.SetPrefix("Sender Round1 ")
+	log.Println(tx.Gas())
 
 	SenToRecObject.EncryptedOutputOfGates=encodedGateOutputs
-	SenToRecObject.ReceiverEntryKey=recEntryKey
 	byteArrayFromSenToRec,err := json.Marshal(SenToRecObject)
 	if err != nil {
-		fmt.Println("error:", err)
+		//log.Println("error:", err)
 	}
 
 	channel_SenToRec<-byteArrayFromSenToRec
-	fmt.Println("\n->Sender \nByteArray sent to Receiver")
-	fmt.Println("\n->Sender\n Initialization Finished")
+	//log.Println("\n->Sender \nByteArray sent to Receiver")
 
 	//creating a contract instance
 	instance,err:= import_contracts.NewFairswap(contractAddress,client)
@@ -1434,8 +1467,7 @@ func maliciousSender_WrongEncryption(authSender *bind.TransactOpts,client *backe
 			break;
 		}
 		if(Phase==6){
-			fmt.Println("\n->Sender\nReceiver has not paid enough ether")
-			channel_SenToMain<-"Malicious Receiver-Dind't pay enough ether "
+			//log.Println("\n->Sender\nReceiver has not paid enough ether")
 			break;
 		}
 		time.Sleep(time.Second *1)
@@ -1447,16 +1479,13 @@ func maliciousSender_WrongEncryption(authSender *bind.TransactOpts,client *backe
 			log.Fatal(err)
 	}
 	if(Phase==1){
-		fmt.Println("\n->Sender\nReceiver hasnt accepted within time")
-		channel_SenToMain<-"Either the reciever is not interested now"
+		//log.Println("\n->Sender\nReceiver hasnt accepted within time")
 	}else{
 
 			if(!RevealedBool){
-				channel_SenToMain<-"Receiver has not accepted within the timeout, Key not Revealed"
-
 			}else{
 
-							_,err=instance.RevealKey(&bind.TransactOpts{
+						  tx,err=instance.RevealKey(&bind.TransactOpts{
 									From:authSender.From,
 									Signer:authSender.Signer,
 									Value: nil,
@@ -1464,7 +1493,10 @@ func maliciousSender_WrongEncryption(authSender *bind.TransactOpts,client *backe
 							if err!=nil{
 								log.Fatal(err)
 							}
+							//log.Println("\n->Sender\nKeyRevealed")
 							client.Commit()
+							log.SetPrefix("Sender Round3 ")
+							log.Println(tx.Gas())
 					}
 
 			//The contract is in keyRevealed stage
@@ -1481,13 +1513,11 @@ func maliciousSender_WrongEncryption(authSender *bind.TransactOpts,client *backe
 						log.Fatal(err)
 					}
 					if(Phase==6){
-						fmt.Println("\n->Sender\nReceiver has made a wrong complaint")
-						channel_SenToMain<-"Receiver Wrong complaint "
+						//log.Println("\n->Sender\nReceiver has made a wrong complaint")
 						break;
 					}
 					if(Phase==5){
-						fmt.Println("\n->Sender\nIt seems I have made a mistake")
-						channel_SenToMain<-"Sender has wrongly encrypted filechunks"
+						//log.Println("\n->Sender\nIt seems I have made a mistake(Wrong Encryption)")
 						break
 					}
 					time.Sleep(time.Second *1)
@@ -1512,12 +1542,14 @@ func maliciousSender_WrongEncryption(authSender *bind.TransactOpts,client *backe
 						log.Fatal(err)
 			}
 
+			//log.Println("\n->Sender\nProtocol completed Successfully")
 			//the protocol gets finished and the sender sends the message to the main function
-			channel_SenToMain<-"Protocol2 completed.Sender Got the money"
 			}
 	}
+	wg.Done()
 }
 
+/*
 func maliciousSender_WrongKeyReveal(authSender *bind.TransactOpts,client *backends.SimulatedBackend,channel_SenToRec chan []byte,channel_SenToMain chan string){
 
 
@@ -1587,12 +1619,12 @@ func maliciousSender_WrongKeyReveal(authSender *bind.TransactOpts,client *backen
 	SenToRecObject.ReceiverEntryKey=recEntryKey
 	byteArrayFromSenToRec,err := json.Marshal(SenToRecObject)
 	if err != nil {
-		fmt.Println("error:", err)
+		//log.Println("error:", err)
 	}
 
 	channel_SenToRec<-byteArrayFromSenToRec
-	fmt.Println("\n->Sender \nByteArray sent to Receiver")
-	fmt.Println("\n->Sender\n Initialization Finished")
+	//log.Println("\n->Sender \nByteArray sent to Receiver")
+	//log.Println("\n->Sender\n Initialization Finished")
 
 	//creating a contract instance
 	instance,err:= import_contracts.NewFairswap(contractAddress,client)
@@ -1611,7 +1643,7 @@ func maliciousSender_WrongKeyReveal(authSender *bind.TransactOpts,client *backen
 			break;
 		}
 		if(Phase==6){
-			fmt.Println("\n->Sender\nReceiver has not paid enough ether")
+			//log.Println("\n->Sender\nReceiver has not paid enough ether")
 			channel_SenToMain<-"Malicious Receiver-Dind't pay enough ether "
 			break;
 		}
@@ -1624,7 +1656,7 @@ func maliciousSender_WrongKeyReveal(authSender *bind.TransactOpts,client *backen
 			log.Fatal(err)
 	}
 	if(Phase==1){
-		fmt.Println("\n->Sender\nReceiver hasnt accepted within time")
+		//log.Println("\n->Sender\nReceiver hasnt accepted within time")
 		channel_SenToMain<-"Either the reciever is not interested now"
 	}else{
 
@@ -1643,7 +1675,7 @@ func maliciousSender_WrongKeyReveal(authSender *bind.TransactOpts,client *backen
 								log.Fatal(err)
 							}
 							client.Commit()
-							fmt.Println("\n->Sender :\n I have revealed the wrong key")
+							//log.Println("\n->Sender :\n I have revealed the wrong key")
 					}
 			channel_SenToMain<-"Sender Revealed the wrong key"
 	}
@@ -1681,8 +1713,8 @@ func maliciousReceiver_WrongComplain(authReceiver *bind.TransactOpts,client *bac
 	boolValueEncryptedGateOutput:=checkMerkleRootForEncInp(Receiver_EncryptedOutputOfGates,Receiver_MerkleRootOfEncInp)
 	boolValueEncryptedGateTuples:=checkMerkleRootForGateTuples(gateTuples,Receiver_MerkleRootOfGateTuples)
 
-	fmt.Println("\n->Receiver\nboolValueEncryptedGateOutput(comparision between merkleroot of encryptedGateOutputs from contract and calulated encryptedGateOutputs merkleroot): ",boolValueEncryptedGateOutput)
-	fmt.Println("\n->Receiver\nboolValueEncryptedGateTuples(comparision between merkleroot of encryptedGateTuples from contract and calulated encryptedGateTuples merkleroot): ",boolValueEncryptedGateTuples)
+	//log.Println("\n->Receiver\nboolValueEncryptedGateOutput(comparision between merkleroot of encryptedGateOutputs from contract and calulated encryptedGateOutputs merkleroot): ",boolValueEncryptedGateOutput)
+	//log.Println("\n->Receiver\nboolValueEncryptedGateTuples(comparision between merkleroot of encryptedGateTuples from contract and calulated encryptedGateTuples merkleroot): ",boolValueEncryptedGateTuples)
 
 	if(boolValueEncryptedGateOutput && boolValueEncryptedGateTuples){
 
@@ -1713,7 +1745,7 @@ func maliciousReceiver_WrongComplain(authReceiver *bind.TransactOpts,client *bac
 
 			client.Commit()
 
-			fmt.Println("\n->Receiver\n Finished Accepting")
+			//log.Println("\n->Receiver\n Finished Accepting")
 			channel_RecToMainIni<-"Accepted stage got over"
 
 
@@ -1735,13 +1767,13 @@ func maliciousReceiver_WrongComplain(authReceiver *bind.TransactOpts,client *bac
 					if err!=nil{
 						log.Fatal(err)
 					}
-					fmt.Println("\n->Receiver\ncontract_Key",contract_Key)
+					//log.Println("\n->Receiver\ncontract_Key",contract_Key)
 					AcceptedBool=true
 					break;
 				}
 
 				if(Phase==5){
-					fmt.Println("\n->Receiver\nSender Has revealed the wrong key")
+					//log.Println("\n->Receiver\nSender Has revealed the wrong key")
 					channel_RecToMainRev<-"Wrong key revealed"
 
 				}
@@ -1752,7 +1784,7 @@ func maliciousReceiver_WrongComplain(authReceiver *bind.TransactOpts,client *bac
 
 			if(!AcceptedBool){
 
-					fmt.Println("\n->Receiver\nSender has not revealed the key...ReceiverGetEther function called")
+					//log.Println("\n->Receiver\nSender has not revealed the key...ReceiverGetEther function called")
 					gasLimit := uint64(2100000000)
 
 					//the receiver getting the ether
@@ -1771,7 +1803,7 @@ func maliciousReceiver_WrongComplain(authReceiver *bind.TransactOpts,client *bac
 
 			} else{
 
-				fmt.Println("\n->Receiver\nSender has revealed the key....Proceeding further")
+				//log.Println("\n->Receiver\nSender has revealed the key....Proceeding further")
 
 				merkleTreeForGateTuples:=createMerkleTreeForGateTuples(gateTuples)
 			 	merkleTreeForEncInp:=createMerkleTreeForEncInp(Receiver_SenToRecObj.EncryptedOutputOfGates)
@@ -1780,10 +1812,10 @@ func maliciousReceiver_WrongComplain(authReceiver *bind.TransactOpts,client *bac
 
 			 	complain,decodedOutputs,gateComplain,encodedVectors_ThisGate :=Extract(Receiver_SenToRecObj.EncryptedOutputOfGates,contract_Key,maliciousGateTuples,merkleTreeForEncInp,merkleTreeForGateTuples,Receiver_MerkleRootOfEncInp,Receiver_MerkleRootOfGateTuples)
 
-				fmt.Println("\n->Receiver\nDecoded Ouptuts : ",decodedOutputs)
+				//log.Println("\n->Receiver\nDecoded Ouptuts : ",decodedOutputs)
 
 				if(complain==nil){
-					fmt.Println("\n->Receiver\nNo complain")
+					//log.Println("\n->Receiver\nNo complain")
 					channel_RecToMainRev<-"Receiver Finished Protocol "
 				} else{
 
@@ -1809,7 +1841,7 @@ func maliciousReceiver_WrongComplain(authReceiver *bind.TransactOpts,client *bac
 							log.Fatal(err)
 						}
 						if(Phase==5){
-							fmt.Println("\n->Receiver\nSender Has wrongly calulated the encrypted inputs")
+							//log.Println("\n->Receiver\nSender Has wrongly calulated the encrypted inputs")
 							channel_RecToMainRev<-"Wrong encrypted inputs"
 
 						}
@@ -1823,3 +1855,5 @@ func maliciousReceiver_WrongComplain(authReceiver *bind.TransactOpts,client *bac
 				channel_RecToMainRev<-"Sender sent wrong encodedGateOutputs,not equal to contract encodedGateOutputs merkleroot,Not gone into revealed phase"
 		}
 }
+
+*/
