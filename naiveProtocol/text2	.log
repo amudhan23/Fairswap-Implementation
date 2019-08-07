@@ -1,0 +1,585 @@
+
+Naive Protocol - Time 2019/08/04 22:23:31 sender_round1_computingTime_calculatingVariables_time : 53.996µs
+
+Naive Protocol - Time 2019/08/04 22:23:31 sender_round1_commitTime_deployingContract_time : 16.988719ms
+
+Naive Protocol - Gas Cost 2019/08/04 22:23:31 Sender Round 1 :  1636900
+
+Naive Protocol - Time 2019/08/04 22:23:31 sender_round1_communicationTime_sendingEncryptedGateOutputs_time : 45.932µs
+
+Naive Protocol - Time 2019/08/04 22:23:31 receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : 17.334197ms
+
+Naive Protocol - Time 2019/08/04 22:23:31 receiver_round1_computingTime_merkleRootCheck_time : 1.161762ms
+
+Naive Protocol - Time 2019/08/04 22:23:52 sender_round1_computingTime_calculatingVariables_time : 114.904µs
+
+Naive Protocol - Time 2019/08/04 22:23:52 sender_round1_commitTime_deployingContract_time : 15.994535ms
+
+Naive Protocol - Gas Cost 2019/08/04 22:23:52 Sender Round 1 :  1636900
+
+Naive Protocol - Time 2019/08/04 22:23:52 sender_round1_communicationTime_sendingEncryptedGateOutputs_time : 101.767µs
+
+Naive Protocol - Time 2019/08/04 22:23:52 receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : 16.489321ms
+
+Naive Protocol - Time 2019/08/04 22:23:52 receiver_round1_computingTime_merkleRootCheck_time : 1.070855ms
+
+Naive Protocol - Time 2019/08/04 22:24:10 sender_round1_computingTime_calculatingVariables_time : 69.668µs
+
+Naive Protocol - Time 2019/08/04 22:24:10 sender_round1_commitTime_deployingContract_time : 15.807ms
+
+Naive Protocol - Gas Cost 2019/08/04 22:24:10 Sender Round 1 :  1636900
+
+Naive Protocol - Time 2019/08/04 22:24:10 sender_round1_communicationTime_sendingEncryptedGateOutputs_time : 43.331µs
+
+Naive Protocol - Time 2019/08/04 22:24:10 receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : 16.070292ms
+
+Naive Protocol - Time 2019/08/04 22:24:10 receiver_round1_computingTime_merkleRootCheck_time : 1.051375ms
+
+Naive Protocol - Time 2019/08/04 22:24:30 sender_round2_waitingTime_forReceiverToAccept_time : 20.010528403s 
+
+Naive Protocol - Time 2019/08/04 22:30:56 sender_round1_computingTime_calculatingVariables_time : 51.189µs 
+
+Naive Protocol - Time 2019/08/04 22:30:56 sender_round1_commitTime_deployingContract_time : 15.974788ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:30:56 Sender Round 1 :  1636900
+
+Naive Protocol - Time 2019/08/04 22:30:56 sender_round1_communicationTime_sendingEncryptedGateOutputs_time : 33.127µs 
+
+Naive Protocol - Time 2019/08/04 22:30:56 receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : 16.191014ms 
+
+Naive Protocol - Time 2019/08/04 22:30:56 receiver_round1_computingTime_merkleRootCheck_time : 1.952498ms 
+
+Naive Protocol - Time 2019/08/04 22:30:56 receiver_round2_commitTime_Accept_time : 4.92397ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:30:56 Receiver Round 2 :  53036
+
+Naive Protocol - Time 2019/08/04 22:30:57 sender_round2_waitingTime_forReceiverToAccept_time : 1.001043048s 
+
+Naive Protocol - Time 2019/08/04 22:30:57 sender_round3_commitTime_revealKey_time : 14.137611ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:30:57 Sender Round 3 :  76683
+
+Naive Protocol - Time 2019/08/04 22:30:58 receiver_round3_waitingTime_forSenderToRevealKey_time : 2.004286267s 
+
+Naive Protocol - Time 2019/08/04 22:30:58 receiver_round4_computingTime_extraction_time : 2.082375ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:30:58 Receiver Round 4 :  0
+
+Naive Protocol - Time 2019/08/04 22:31:32 sender_round1_computingTime_calculatingVariables_time : 78.389µs 
+
+Naive Protocol - Time 2019/08/04 22:31:32 sender_round1_commitTime_deployingContract_time : 15.561812ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:31:32 Sender Round 1 :  1636772
+
+Naive Protocol - Time 2019/08/04 22:31:32 sender_round1_communicationTime_sendingEncryptedGateOutputs_time : 31.912µs 
+
+Naive Protocol - Time 2019/08/04 22:31:32 receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : 15.806231ms 
+
+Naive Protocol - Time 2019/08/04 22:31:32 receiver_round1_computingTime_merkleRootCheck_time : 1.146771ms 
+
+Naive Protocol - Time 2019/08/04 22:31:32 receiver_round2_commitTime_Accept_time : 3.058937ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:31:32 Receiver Round 2 :  53036
+
+Naive Protocol - Time 2019/08/04 22:31:33 sender_round2_waitingTime_forReceiverToAccept_time : 1.001171849s 
+
+Naive Protocol - Time 2019/08/04 22:31:52 receiver_round3_waitingTime_forSenderToRevealKey_time : 20.010499479s 
+
+Naive Protocol - Gas Cost 2019/08/04 22:31:54 Receiver Round 3 (Sender Not Revealed Key) :  35564
+
+Naive Protocol - Time 2019/08/04 22:31:54 receiver_round3_commitTime_senderKeyNotRevealedGettingEther_time : 6.137544ms 
+
+Naive Protocol - Time 2019/08/04 22:32:27 sender_round1_computingTime_calculatingVariables_time : 68.838µs 
+
+Naive Protocol - Time 2019/08/04 22:32:27 sender_round1_commitTime_deployingContract_time : 16.218221ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:32:27 Sender Round 1 :  1636772
+
+Naive Protocol - Time 2019/08/04 22:32:27 sender_round1_communicationTime_sendingEncryptedGateOutputs_time : 59.962µs 
+
+Naive Protocol - Time 2019/08/04 22:32:27 receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : 16.537119ms 
+
+Naive Protocol - Time 2019/08/04 22:32:27 receiver_round1_computingTime_merkleRootCheck_time : 1.918853ms 
+
+Naive Protocol - Time 2019/08/04 22:32:27 receiver_round2_commitTime_Accept_time : 4.497844ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:32:27 Receiver Round 2 :  53036
+
+Naive Protocol - Time 2019/08/04 22:32:28 sender_round2_waitingTime_forReceiverToAccept_time : 1.001138246s 
+
+Naive Protocol - Time 2019/08/04 22:32:28 sender_round3_commitTime_revealKey_time : 15.297076ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:32:28 Sender Round 3 :  76683
+
+Naive Protocol - Time 2019/08/04 22:32:29 receiver_round3_waitingTime_forSenderToRevealKey_time : 2.005735435s 
+
+Naive Protocol - Time 2019/08/04 22:32:29 receiver_round4_computingTime_extraction_time : 2.026993ms 
+Naive Protocol - Time 2019/08/04 22:32:29 receiver_round4_commitTime_complain_time : 73.883631ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:32:29 Receiver Round 4 :  105159
+
+Naive Protocol - Time 2019/08/04 22:32:30 sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_time : 2.068873583s 
+
+Naive Protocol - Time 2019/08/04 22:33:48 sender_round1_computingTime_calculatingVariables_time : 48.786µs 
+
+Naive Protocol - Time 2019/08/04 22:33:48 sender_round1_commitTime_deployingContract_time : 16.763411ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:33:48 Sender Round 1 :  1636900
+
+Naive Protocol - Time 2019/08/04 22:33:48 sender_round1_communicationTime_sendingEncryptedGateOutputs_time : 30.577µs 
+
+Naive Protocol - Time 2019/08/04 22:33:48 receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : 17.068088ms 
+
+Naive Protocol - Time 2019/08/04 22:33:48 receiver_round1_computingTime_merkleRootCheck_time : 1.007934ms 
+
+Naive Protocol - Time 2019/08/04 22:33:48 receiver_round2_commitTime_Accept_time : 3.046186ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:33:48 Receiver Round 2 :  53036
+
+Naive Protocol - Time 2019/08/04 22:33:49 sender_round2_waitingTime_forReceiverToAccept_time : 1.00091452s 
+
+Naive Protocol - Time 2019/08/04 22:33:49 sender_round3_commitTime_revealKey_time : 6.980254ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:33:49 Sender Round 3 :  76683
+
+Naive Protocol - Time 2019/08/04 22:33:50 receiver_round3_waitingTime_forSenderToRevealKey_time : 2.002975127s 
+
+Naive Protocol - Time 2019/08/04 22:33:50 receiver_round4_computingTime_extraction_time : 2.18228ms 
+
+Naive Protocol - Time 2019/08/04 22:33:50 receiver_round4_commitTime_complain_time : 74.566802ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:33:50 Receiver Round 4 :  105159
+
+Naive Protocol - Time 2019/08/04 22:33:51 sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_time : 2.002372055s 
+
+Naive Protocol - Time 2019/08/04 22:38:23 sender_round1_computingTime_calculatingVariables_time : 80.377µs 
+
+Naive Protocol - Time 2019/08/04 22:38:24 sender_round1_commitTime_deployingContract_time : 15.825126ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:38:24 Sender Round 1 :  1636900
+
+Naive Protocol - Time 2019/08/04 22:38:24 sender_round1_communicationTime_sendingEncryptedGateOutputs_time : 30.089µs 
+
+Naive Protocol - Time 2019/08/04 22:38:24 receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : 16.085863ms 
+
+Naive Protocol - Time 2019/08/04 22:38:24 receiver_round1_computingTime_merkleRootCheck_time : 990.763µs 
+
+Naive Protocol - Time 2019/08/04 22:38:24 receiver_round2_commitTime_Accept_time : 3.049345ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:38:24 Receiver Round 2 :  53036
+
+Naive Protocol - Time 2019/08/04 22:38:25 sender_round2_waitingTime_forReceiverToAccept_time : 1.001168343s 
+
+Naive Protocol - Time 2019/08/04 22:38:25 sender_round3_commitTime_revealKey_time : 8.244546ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:38:25 Sender Round 3 :  76683
+
+Naive Protocol - Time 2019/08/04 22:38:26 receiver_round3_waitingTime_forSenderToRevealKey_time : 2.00467398s 
+
+Naive Protocol - Time 2019/08/04 22:38:26 receiver_round4_computingTime_extraction_time : 3.387833ms 
+
+Naive Protocol - Time 2019/08/04 22:38:26 receiver_round4_commitTime_complain_time : 52.143192ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:38:26 Receiver Round 4 :  105159
+
+Naive Protocol - Time 2019/08/04 22:38:27 sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_time : 2.00276603s 
+
+Naive Protocol - Time 2019/08/04 22:39:13 sender_round1_computingTime_calculatingVariables_time : 63.846µs 
+
+Naive Protocol - Time 2019/08/04 22:39:13 sender_round1_commitTime_deployingContract_time : 15.338931ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:39:13 Sender Round 1 :  1636900
+
+Naive Protocol - Time 2019/08/04 22:39:13 sender_round1_communicationTime_sendingEncryptedGateOutputs_time : 36.25µs 
+
+Naive Protocol - Time 2019/08/04 22:39:13 receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : 15.582952ms 
+
+Naive Protocol - Time 2019/08/04 22:39:13 receiver_round1_computingTime_merkleRootCheck_time : 1.043627ms 
+
+Naive Protocol - Time 2019/08/04 22:39:13 receiver_round2_commitTime_Accept_time : 3.808339ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:39:13 Receiver Round 2 :  53036
+
+Naive Protocol - Time 2019/08/04 22:39:14 sender_round2_waitingTime_forReceiverToAccept_time : 1.001002825s 
+
+Naive Protocol - Time 2019/08/04 22:39:14 sender_round3_commitTime_revealKey_time : 7.997935ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:39:14 Sender Round 3 :  76683
+
+Naive Protocol - Time 2019/08/04 22:39:15 receiver_round3_waitingTime_forSenderToRevealKey_time : 2.00338922s 
+
+Naive Protocol - Time 2019/08/04 22:39:15 receiver_round4_computingTime_extraction_time : 2.166261ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:39:15 Receiver Round 4 :  0
+
+Naive Protocol - Time 2019/08/04 22:40:53 sender_round1_computingTime_calculatingVariables_time : 49.877µs 
+
+Naive Protocol - Time 2019/08/04 22:40:53 sender_round1_commitTime_deployingContract_time : 15.385477ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:40:53 Sender Round 1 :  1636836
+
+Naive Protocol - Time 2019/08/04 22:40:53 sender_round1_communicationTime_sendingEncryptedGateOutputs_time : 28.685µs 
+
+Naive Protocol - Time 2019/08/04 22:40:53 receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : 15.596458ms 
+
+Naive Protocol - Time 2019/08/04 22:40:53 receiver_round1_computingTime_merkleRootCheck_time : 1.572987ms 
+
+Naive Protocol - Time 2019/08/04 22:40:53 receiver_round2_commitTime_Accept_time : 4.24639ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:40:53 Receiver Round 2 :  53036
+
+Naive Protocol - Time 2019/08/04 22:40:54 sender_round2_waitingTime_forReceiverToAccept_time : 1.000911067s 
+
+Naive Protocol - Time 2019/08/04 22:40:54 sender_round3_commitTime_revealKey_time : 14.232686ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:40:54 Sender Round 3 :  76683
+
+Naive Protocol - Time 2019/08/04 22:40:55 receiver_round3_waitingTime_forSenderToRevealKey_time : 2.005163679s 
+
+Naive Protocol - Time 2019/08/04 22:40:55 receiver_round4_computingTime_extraction_time : 1.92915ms 
+
+Naive Protocol - Time 2019/08/04 22:40:55 receiver_round4_commitTime_complain_time : 6.992626ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:40:55 Receiver Round 4 :  39644
+
+Naive Protocol - Time 2019/08/04 22:40:56 sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_time : 2.004039008s 
+
+Naive Protocol - Time 2019/08/04 22:42:19 sender_round1_computingTime_calculatingVariables_time : 109.736µs 
+
+Naive Protocol - Time 2019/08/04 22:42:19 sender_round1_commitTime_deployingContract_time : 16.437711ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:42:19 Sender Round 1 :  1636772
+
+Naive Protocol - Time 2019/08/04 22:42:19 sender_round1_communicationTime_sendingEncryptedGateOutputs_time : 32.849µs 
+
+Naive Protocol - Time 2019/08/04 22:42:19 receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : 16.793203ms 
+
+Naive Protocol - Time 2019/08/04 22:42:19 receiver_round1_computingTime_merkleRootCheck_time : 1.182036ms 
+
+Naive Protocol - Time 2019/08/04 22:42:19 receiver_round2_commitTime_Accept_time : 3.284464ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:42:19 Receiver Round 2 :  53036
+
+Naive Protocol - Time 2019/08/04 22:42:20 sender_round2_waitingTime_forReceiverToAccept_time : 1.000927904s 
+
+Naive Protocol - Time 2019/08/04 22:42:20 sender_round3_commitTime_revealKey_time : 14.364258ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:42:20 Sender Round 3 :  76683
+
+Naive Protocol - Time 2019/08/04 22:42:21 receiver_round3_waitingTime_forSenderToRevealKey_time : 2.00751892s 
+
+Naive Protocol - Time 2019/08/04 22:42:21 receiver_round4_computingTime_extraction_time : 3.157696ms 
+
+Naive Protocol - Time 2019/08/04 22:42:21 receiver_round4_commitTime_complain_time : 15.550713ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:42:21 Receiver Round 4 :  39644
+
+Naive Protocol - Time 2019/08/04 22:42:22 sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_time : 2.011561816s 
+
+Naive Protocol - Time 2019/08/04 22:42:31 sender_round1_computingTime_calculatingVariables_time : 67.836µs 
+
+Naive Protocol - Time 2019/08/04 22:42:31 sender_round1_commitTime_deployingContract_time : 16.265497ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:42:31 Sender Round 1 :  1636772
+
+Naive Protocol - Time 2019/08/04 22:42:31 sender_round1_communicationTime_sendingEncryptedGateOutputs_time : 31.271µs 
+
+Naive Protocol - Time 2019/08/04 22:42:31 receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : 16.491272ms 
+
+Naive Protocol - Time 2019/08/04 22:42:31 receiver_round1_computingTime_merkleRootCheck_time : 1.584913ms 
+
+Naive Protocol - Time 2019/08/04 22:42:31 receiver_round2_commitTime_Accept_time : 3.992623ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:42:31 Receiver Round 2 :  53036
+
+Naive Protocol - Time 2019/08/04 22:42:32 sender_round2_waitingTime_forReceiverToAccept_time : 1.000841982s 
+
+Naive Protocol - Time 2019/08/04 22:42:32 sender_round3_commitTime_revealKey_time : 18.747874ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:42:32 Sender Round 3 :  76683
+
+Naive Protocol - Time 2019/08/04 22:42:33 receiver_round3_waitingTime_forSenderToRevealKey_time : 2.00875615s 
+
+Naive Protocol - Time 2019/08/04 22:42:33 receiver_round4_computingTime_extraction_time : 3.111014ms 
+
+Naive Protocol - Time 2019/08/04 22:42:33 receiver_round4_commitTime_complain_time : 16.590513ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:42:33 Receiver Round 4 :  39644
+
+Naive Protocol - Time 2019/08/04 22:42:34 sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_time : 2.010260316s 
+
+Naive Protocol - Time 2019/08/04 22:46:09 sender_round1_computingTime_calculatingVariables_time : 120.431µs 
+
+Naive Protocol - Time 2019/08/04 22:46:09 sender_round1_commitTime_deployingContract_time : 15.45198ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:46:09 Sender Round 1 :  1636772
+
+Naive Protocol - Time 2019/08/04 22:46:09 sender_round1_communicationTime_sendingEncryptedGateOutputs_time : 24.198µs 
+
+Naive Protocol - Time 2019/08/04 22:46:09 receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : 15.757622ms 
+
+Naive Protocol - Time 2019/08/04 22:46:09 receiver_round1_computingTime_merkleRootCheck_time : 1.001363ms 
+
+Naive Protocol - Time 2019/08/04 22:46:09 receiver_round2_commitTime_Accept_time : 3.06727ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:46:09 Receiver Round 2 :  53036
+
+Naive Protocol - Time 2019/08/04 22:46:10 sender_round2_waitingTime_forReceiverToAccept_time : 1.000951366s 
+
+Naive Protocol - Time 2019/08/04 22:46:10 sender_round3_commitTime_revealKey_time : 7.995231ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:46:10 Sender Round 3 :  76683
+
+Naive Protocol - Time 2019/08/04 22:46:11 receiver_round3_waitingTime_forSenderToRevealKey_time : 2.004199053s 
+
+Naive Protocol - Time 2019/08/04 22:46:11 receiver_round4_computingTime_extraction_time : 2.226329ms 
+
+Naive Protocol - Time 2019/08/04 22:46:11 receiver_round4_commitTime_complain_time : 62.881878ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:46:11 Receiver Round 4 :  102013
+
+Naive Protocol - Time 2019/08/04 22:46:12 sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_time : 2.002693091s 
+
+Naive Protocol - Time 2019/08/04 22:46:18 sender_round1_computingTime_calculatingVariables_time : 52.87µs 
+
+Naive Protocol - Time 2019/08/04 22:46:18 sender_round1_commitTime_deployingContract_time : 16.009985ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:46:18 Sender Round 1 :  1636900
+
+Naive Protocol - Time 2019/08/04 22:46:18 sender_round1_communicationTime_sendingEncryptedGateOutputs_time : 63.324µs 
+
+Naive Protocol - Time 2019/08/04 22:46:18 receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : 16.289154ms 
+
+Naive Protocol - Time 2019/08/04 22:46:18 receiver_round1_computingTime_merkleRootCheck_time : 1.675772ms 
+
+Naive Protocol - Time 2019/08/04 22:46:18 receiver_round2_commitTime_Accept_time : 4.267318ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:46:18 Receiver Round 2 :  53036
+
+Naive Protocol - Time 2019/08/04 22:46:19 sender_round2_waitingTime_forReceiverToAccept_time : 1.000911256s 
+
+Naive Protocol - Time 2019/08/04 22:46:19 sender_round3_commitTime_revealKey_time : 7.103729ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:46:19 Sender Round 3 :  76683
+
+Naive Protocol - Time 2019/08/04 22:46:20 receiver_round3_waitingTime_forSenderToRevealKey_time : 2.001458922s 
+
+Naive Protocol - Time 2019/08/04 22:46:20 receiver_round4_computingTime_extraction_time : 2.259505ms 
+
+Naive Protocol - Time 2019/08/04 22:46:20 receiver_round4_commitTime_complain_time : 55.353642ms 
+
+Naive Protocol - Gas Cost 2019/08/04 22:46:20 Receiver Round 4 :  102013
+
+Naive Protocol - Time 2019/08/04 22:46:21 sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_time : 2.002652258s 
+
+Naive Protocol - Time 2019/08/07 18:50:59 sender_round1_computingTime_calculatingVariables_time : 75.779µs 
+
+Naive Protocol - Time 2019/08/07 18:50:59 sender_round1_commitTime_deployingContract_time : 16.197363ms 
+
+Naive Protocol - Gas Cost 2019/08/07 18:50:59 Sender Round 1 :  1636836
+
+Naive Protocol - Time 2019/08/07 18:50:59 sender_round1_communicationTime_sendingEncryptedGateOutputs_time : 27.822µs 
+
+Naive Protocol - Time 2019/08/07 18:50:59 receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : 16.779703ms 
+
+Naive Protocol - Time 2019/08/07 18:50:59 receiver_round1_computingTime_merkleRootCheck_time : 965.03µs 
+
+Naive Protocol - Time 2019/08/07 18:50:59 receiver_round2_commitTime_Accept_time : 3.242532ms 
+
+Naive Protocol - Gas Cost 2019/08/07 18:50:59 Receiver Round 2 :  53036
+
+Naive Protocol - Time 2019/08/07 18:51:00 sender_round2_waitingTime_forReceiverToAccept_time : 1.000834082s 
+
+Naive Protocol - Time 2019/08/07 18:51:00 sender_round3_commitTime_revealKey_time : 13.694782ms 
+
+Naive Protocol - Gas Cost 2019/08/07 18:51:00 Sender Round 3 :  76683
+
+Naive Protocol - Time 2019/08/07 18:51:01 receiver_round3_waitingTime_forSenderToRevealKey_time : 2.006652087s 
+
+Naive Protocol - Time 2019/08/07 18:51:01 receiver_round4_computingTime_extraction_time : 2.295309ms 
+
+Naive Protocol - Time 2019/08/07 18:51:01 receiver_round4_commitTime_complain_time : 76.672522ms 
+
+Naive Protocol - Gas Cost 2019/08/07 18:51:01 Receiver Round 4 :  102013
+
+Naive Protocol - Time 2019/08/07 18:51:02 sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_time : 2.072759924s 
+
+Naive Protocol - Time 2019/08/07 18:51:29 sender_round1_computingTime_calculatingVariables_time : 66.771µs 
+
+Naive Protocol - Time 2019/08/07 18:51:29 sender_round1_commitTime_deployingContract_time : 15.942537ms 
+
+Naive Protocol - Gas Cost 2019/08/07 18:51:29 Sender Round 1 :  1636900
+
+Naive Protocol - Time 2019/08/07 18:51:29 sender_round1_communicationTime_sendingEncryptedGateOutputs_time : 27.529µs 
+
+Naive Protocol - Time 2019/08/07 18:51:29 receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : 16.275387ms 
+
+Naive Protocol - Time 2019/08/07 18:51:29 receiver_round1_computingTime_merkleRootCheck_time : 1.044749ms 
+
+Naive Protocol - Time 2019/08/07 18:51:29 receiver_round2_commitTime_Accept_time : 3.03168ms 
+
+Naive Protocol - Gas Cost 2019/08/07 18:51:29 Receiver Round 2 :  53036
+
+Naive Protocol - Time 2019/08/07 18:51:30 sender_round2_waitingTime_forReceiverToAccept_time : 1.000942125s 
+
+Naive Protocol - Time 2019/08/07 18:51:30 sender_round3_commitTime_revealKey_time : 14.740754ms 
+
+Naive Protocol - Gas Cost 2019/08/07 18:51:30 Sender Round 3 :  76683
+
+Naive Protocol - Time 2019/08/07 18:51:31 receiver_round3_waitingTime_forSenderToRevealKey_time : 2.008109885s 
+
+Naive Protocol - Time 2019/08/07 18:51:31 receiver_round4_computingTime_extraction_time : 1.95682ms 
+
+Naive Protocol - Time 2019/08/07 18:51:31 receiver_round4_commitTime_complain_time : 58.370284ms 
+
+Naive Protocol - Gas Cost 2019/08/07 18:51:31 Receiver Round 4 :  102013
+
+Naive Protocol - Time 2019/08/07 18:51:32 sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_time : 2.052970911s 
+
+Naive Protocol - Time 2019/08/07 18:51:38 sender_round1_computingTime_calculatingVariables_time : 102.442µs 
+
+Naive Protocol - Time 2019/08/07 18:51:38 sender_round1_commitTime_deployingContract_time : 24.214434ms 
+
+Naive Protocol - Gas Cost 2019/08/07 18:51:38 Sender Round 1 :  2084900
+
+Naive Protocol - Time 2019/08/07 18:51:38 sender_round1_communicationTime_sendingEncryptedGateOutputs_time : 32.043µs 
+
+Naive Protocol - Time 2019/08/07 18:51:38 receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : 24.479812ms 
+
+Naive Protocol - Time 2019/08/07 18:51:38 receiver_round1_computingTime_merkleRootCheck_time : 1.977625ms 
+
+Naive Protocol - Time 2019/08/07 18:51:38 receiver_round2_commitTime_Accept_time : 3.014498ms 
+
+Naive Protocol - Gas Cost 2019/08/07 18:51:38 Receiver Round 2 :  53036
+
+Naive Protocol - Time 2019/08/07 18:51:39 sender_round2_waitingTime_forReceiverToAccept_time : 1.001293003s 
+
+Naive Protocol - Time 2019/08/07 18:51:39 sender_round3_commitTime_revealKey_time : 13.293215ms 
+
+Naive Protocol - Gas Cost 2019/08/07 18:51:39 Sender Round 3 :  76683
+
+Naive Protocol - Time 2019/08/07 18:51:44 sender_round1_computingTime_calculatingVariables_time : 84.592µs 
+
+Naive Protocol - Time 2019/08/07 18:51:44 sender_round1_commitTime_deployingContract_time : 24.643423ms 
+
+Naive Protocol - Gas Cost 2019/08/07 18:51:44 Sender Round 1 :  2084452
+
+Naive Protocol - Time 2019/08/07 18:51:44 sender_round1_communicationTime_sendingEncryptedGateOutputs_time : 32.005µs 
+
+Naive Protocol - Time 2019/08/07 18:51:44 receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : 24.876062ms 
+
+Naive Protocol - Time 2019/08/07 18:51:44 receiver_round1_computingTime_merkleRootCheck_time : 1.857543ms 
+
+Naive Protocol - Time 2019/08/07 18:51:44 receiver_round2_commitTime_Accept_time : 3.02143ms 
+
+Naive Protocol - Gas Cost 2019/08/07 18:51:44 Receiver Round 2 :  53036
+
+Naive Protocol - Time 2019/08/07 18:51:45 sender_round2_waitingTime_forReceiverToAccept_time : 1.0008711s 
+
+Naive Protocol - Time 2019/08/07 18:51:45 sender_round3_commitTime_revealKey_time : 14.896405ms 
+
+Naive Protocol - Gas Cost 2019/08/07 18:51:45 Sender Round 3 :  98935
+
+Naive Protocol - Time 2019/08/07 18:51:46 receiver_round3_waitingTime_forSenderToRevealKey_time : 2.006223738s 
+
+Naive Protocol - Time 2019/08/07 18:51:46 receiver_round4_computingTime_extraction_time : 1.996195ms 
+
+Naive Protocol - Time 2019/08/07 18:51:46 receiver_round4_commitTime_complain_time : 99.190066ms 
+
+Naive Protocol - Gas Cost 2019/08/07 18:51:46 Receiver Round 4 :  163329
+
+Naive Protocol - Time 2019/08/07 18:51:47 sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_time : 2.091097038s 
+
+Naive Protocol - Time 2019/08/07 18:52:08 sender_round1_computingTime_calculatingVariables_time : 160.429µs 
+
+Naive Protocol - Time 2019/08/07 18:52:08 sender_round1_commitTime_deployingContract_time : 40.553983ms 
+
+Naive Protocol - Gas Cost 2019/08/07 18:52:08 Sender Round 1 :  2981119
+
+Naive Protocol - Time 2019/08/07 18:52:08 sender_round1_communicationTime_sendingEncryptedGateOutputs_time : 74.09µs 
+
+Naive Protocol - Time 2019/08/07 18:52:08 receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : 40.954688ms 
+
+Naive Protocol - Time 2019/08/07 18:52:08 receiver_round1_computingTime_merkleRootCheck_time : 2.946404ms 
+
+Naive Protocol - Time 2019/08/07 18:52:08 receiver_round2_commitTime_Accept_time : 4.036219ms 
+
+Naive Protocol - Gas Cost 2019/08/07 18:52:08 Receiver Round 2 :  53036
+
+Naive Protocol - Time 2019/08/07 18:52:09 sender_round2_waitingTime_forReceiverToAccept_time : 1.00116503s 
+
+Naive Protocol - Time 2019/08/07 18:52:09 sender_round3_commitTime_revealKey_time : 7.755764ms 
+
+Naive Protocol - Gas Cost 2019/08/07 18:52:09 Sender Round 3 :  98935
+
+Naive Protocol - Time 2019/08/07 18:52:10 receiver_round3_waitingTime_forSenderToRevealKey_time : 2.001411087s 
+
+Naive Protocol - Time 2019/08/07 18:52:10 receiver_round4_computingTime_extraction_time : 8.54584ms 
+
+Naive Protocol - Time 2019/08/07 18:52:10 receiver_round4_commitTime_complain_time : 111.947551ms 
+
+Naive Protocol - Gas Cost 2019/08/07 18:52:10 Receiver Round 4 :  163329
+
+Naive Protocol - Time 2019/08/07 18:52:11 sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_time : 2.000963737s 
+
+Naive Protocol - Time 2019/08/07 18:53:00 sender_round1_computingTime_calculatingVariables_time : 141.521µs 
+
+Naive Protocol - Time 2019/08/07 18:53:00 sender_round1_commitTime_deployingContract_time : 38.927992ms 
+
+Naive Protocol - Gas Cost 2019/08/07 18:53:00 Sender Round 1 :  2981247
+
+Naive Protocol - Time 2019/08/07 18:53:00 sender_round1_communicationTime_sendingEncryptedGateOutputs_time : 33.209µs 
+
+Naive Protocol - Time 2019/08/07 18:53:00 receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : 39.300937ms 
+
+Naive Protocol - Time 2019/08/07 18:53:00 receiver_round1_computingTime_merkleRootCheck_time : 3.012817ms 
+
+Naive Protocol - Time 2019/08/07 18:53:00 receiver_round2_commitTime_Accept_time : 3.888251ms 
+
+Naive Protocol - Gas Cost 2019/08/07 18:53:00 Receiver Round 2 :  53036
+
+Naive Protocol - Time 2019/08/07 18:53:01 sender_round2_waitingTime_forReceiverToAccept_time : 1.00122117s 
+
+Naive Protocol - Time 2019/08/07 18:53:01 sender_round3_commitTime_revealKey_time : 14.947976ms 
+
+Naive Protocol - Gas Cost 2019/08/07 18:53:01 Sender Round 3 :  98935
+
+Naive Protocol - Time 2019/08/07 18:53:02 receiver_round3_waitingTime_forSenderToRevealKey_time : 2.004874231s 
+
+Naive Protocol - Time 2019/08/07 18:53:02 receiver_round4_computingTime_extraction_time : 3.032336ms 
+
+Naive Protocol - Time 2019/08/07 18:53:02 receiver_round4_commitTime_complain_time : 89.471564ms 
+
+Naive Protocol - Gas Cost 2019/08/07 18:53:02 Receiver Round 4 :  163329
+
+Naive Protocol - Time 2019/08/07 21:10:10 sender_round1_computingTime_calculatingVariables_time : 54.011µs 
+
+Naive Protocol - Time 2019/08/07 21:10:10 sender_round1_commitTime_deployingContract_time : 15.438393ms 
+
+Naive Protocol - Gas Cost 2019/08/07 21:10:10 Sender Round 1 :  1636836
+
+Naive Protocol - Time 2019/08/07 21:10:10 sender_round1_communicationTime_sendingEncryptedGateOutputs_time : 24.062µs 
+
+Naive Protocol - Time 2019/08/07 21:10:10 receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : 15.630322ms 
+
+Naive Protocol - Time 2019/08/07 21:10:10 receiver_round1_computingTime_merkleRootCheck_time : 1.002305ms 
+
+Naive Protocol - Time 2019/08/07 21:10:10 receiver_round2_commitTime_Accept_time : 2.97936ms 
+
+Naive Protocol - Gas Cost 2019/08/07 21:10:10 Receiver Round 2 :  53036
+
+Naive Protocol - Time 2019/08/07 21:10:11 sender_round2_waitingTime_forReceiverToAccept_time : 1.001053137s 
+
+Naive Protocol - Time 2019/08/07 21:10:11 sender_round3_commitTime_revealKey_time : 7.937894ms 
+
+Naive Protocol - Gas Cost 2019/08/07 21:10:11 Sender Round 3 :  76619
+
+Naive Protocol - Time 2019/08/07 21:10:12 receiver_round3_waitingTime_forSenderToRevealKey_time : 2.004392311s 
+
+Naive Protocol - Time 2019/08/07 21:10:12 receiver_round4_computingTime_extraction_time : 1.95739ms 
+
+Naive Protocol - Time 2019/08/07 21:10:12 receiver_round4_commitTime_complain_time : 49.923167ms 
+
+Naive Protocol - Gas Cost 2019/08/07 21:10:12 Receiver Round 4 :  102013
+
+Naive Protocol - Time 2019/08/07 21:10:13 sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_time : 2.048190333s 
