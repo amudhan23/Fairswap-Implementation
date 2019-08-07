@@ -398,18 +398,18 @@ func Receiver(authReceiver *bind.TransactOpts,client *ethclient.Client,channel_S
 				gasLimit := uint64(230000000)
 
 
-				value:=big.NewInt(100)
+				value:=big.NewInt(5000)
 
 			_	,err=instance.Accept(&bind.TransactOpts{
 				From:authReceiver.From,
 				Signer:authReceiver.Signer,
 				Value:value,
-				GasLimit:gasLimit,
+				// GasLimit:gasLimit,
 			})
 			if err != nil {
 					log.Fatal(err)
 			}
-
+			client.Commit()
 
 
 			fmt.Println("\n->Receiver\n Finished Accepting and Initialization phase ends")

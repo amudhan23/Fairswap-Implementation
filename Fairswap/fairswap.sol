@@ -20,14 +20,22 @@ contract fairswap{
 
 	uint public timeout;
 
-	enum stage{created,initialized,accepted,keyRevealed,finishedAndBothHonestParties,finishedAndMaliciousSender,finishedAndMaliciousReciever}
+	enum stage{created,initialized,active,revealed,finalized}
 
 	stage public phase = stage.created;
 
 	//fn used to move to the next stage fron the current stage
 	function nextStage() public{
 		phase=stage(uint(phase)+1);
-		timeout=now/10+ 10 seconds;
+		timeout=now+ 20 seconds;
+	}
+
+	function Nowy() public {
+		Now=now;
+	}
+
+	function Nowy2() public {
+		Now=now+20 seconds;
 	}
 
 	constructor(uint _price, bytes32 _commitmentOfKey, bytes32  _EncInputRoot, bytes32 _EncCircuitRoot,uint _totalNumberOfGates,uint _maxInputLinesToAGate) public{
@@ -40,15 +48,23 @@ contract fairswap{
 		totalNumberOfGates=_totalNumberOfGates;
 		maxInputLinesToAGate=_maxInputLinesToAGate;
 		depth=log2(totalNumberOfGates)+1;
+		Now=now;
 		nextStage();
 	}
 
 
 
 //modifier to check the eligibility of party, time and phase for a function execution
-modifier allowed(address _party,stage _stage){
+modifier allowedBefore(address _party,stage _stage){
 	require(phase==_stage);
-	require(now/10<timeout);
+	require(now<timeout);
+	require(msg.sender == _party);
+	_;
+}
+
+modifier allowedAfter(address _party,stage _stage){
+	require(phase==_stage);
+	require(now>timeout);
 	require(msg.sender == _party);
 	_;
 }
@@ -56,13 +72,13 @@ modifier allowed(address _party,stage _stage){
 //receiver pays the price for the digital good
 //If receiver pays the required ether,then the stage goes from initialized to accepted.
 //In the case when receiver pays lesser amount,the ehter is transferred back to the receiver
-//and the stage goes from initialized to finishedAndMaliciousReciever
-function accept() allowed(msg.sender,stage.initialized) payable public {
+//and the stage goes from initialized to finalized
+function accept() allowedBefore(msg.sender,stage.initialized) payable public {
 
 	if(msg.value < price)
 	{
 		msg.sender.transfer(msg.value);
-		phase=stage.finishedAndMaliciousReciever;
+
 	}
 	else
 	{
@@ -74,10 +90,9 @@ function accept() allowed(msg.sender,stage.initialized) payable public {
 //sender reveals the key
 //If the sender reveals the right key then the contract stage goes from accepted to keyRevealed
 //If the sender reveals the wrong key, then the ether is transferred to the receiver and the stage
-//goes from accepted to finishedAndMaliciousSender
-function revealKey (bytes32  _key) allowed(senderAddress, stage.accepted) public
+//goes from accepted to finalized
+function revealKey (bytes32  _key) allowedBefore(senderAddress,stage.active) public
 {
-
 	bytes32 Hashed;
 	bytes memory toBeHashed;
 	toBeHashed=new bytes (32);
@@ -89,7 +104,7 @@ function revealKey (bytes32  _key) allowed(senderAddress, stage.accepted) public
 
 	if(Hashed!=commitmentOfKey){
 		receiverAddress.transfer(price);
-		phase=stage.finishedAndMaliciousSender;
+		phase=stage.finalized;
 	}
 	else
 	{
@@ -169,7 +184,7 @@ function revealKey (bytes32  _key) allowed(senderAddress, stage.accepted) public
 		bytes memory finalKey;
 		finalKey=new bytes (plainText.length);
 		finalKey=generateKey(key,plainText.length);
-		encryptedText=new bytes (plainText.length);
+		encryptedText=new bytes (plainText.length)created;
 		for(uint i=0;i<plainText.length;i++){
 			encryptedText[i]=finalKey[i]^plainText[i];
 		}
@@ -225,111 +240,107 @@ function Hash(bytes memory _toBeHashed) internal pure returns(bytes32)
 	}
 
 
-	function complain(bytes32[][] memory complaint, bytes32[] memory gateMerkleProof,bytes[] memory encodedVectors_ThisGate)  public returns(bool)
+	function complain(bytes32[][] memory complaint, bytes32[] memory gateMerkleProof,bytes[] memory encodedVectors_ThisGate) /*allowedBefore(receiverAddress,stage.revealed)*/ public returns(bool)
 	{
+			require(phase==stage.revealed);
+			require(now<timeout);
+			require(msg.sender == receiverAddress);
+			uint8 operation;
+			uint gateIndex;
+			uint8 index;
+			uint8[] memory indicesOfInputGates;
+			uint8 noOFinputToThisParticularGate;
+			bytes[] memory inputVectorsToTheGate;
+			bytes32 OperationValue;
+			bytes32 Out;
 
+			bytes memory Outy;
+			phase=stage.finalized;
 
-		uint8 operation;
-		uint gateIndex;
-		uint8 index;
-		uint8[] memory indicesOfInputGates;
-		uint8 noOFinputToThisParticularGate;
-		bytes[] memory inputVectorsToTheGate;
-		bytes32 OperationValue;
-		bytes32 Out;
-
-		bytes memory Outy;
-
-		if(encodedVectors_ThisGate.length!=complaint.length)
-		{
-			phase=stage.finishedAndMaliciousReciever;
-			senderAddress.transfer(price);
-			return false;
-		}
-
-		for(uint i=0;i<encodedVectors_ThisGate.length;i++)
-		{
-			if(Hash(encodedVectors_ThisGate[i])!=complaint[i][0])
+			if(encodedVectors_ThisGate.length!=complaint.length)
 			{
-				phase=stage.finishedAndMaliciousReciever;
 				senderAddress.transfer(price);
 				return false;
 			}
-		}
 
-		gateIndex=uint8(gateMerkleProof[0][0]);
-
-		if(!Mverify(complaint[0],gateIndex))
-		{
-			phase=stage.finishedAndMaliciousReciever;
-			senderAddress.transfer(price);
-			return false;
-		}
-
-		if(!MverifyForGate(gateMerkleProof,gateIndex))
-		{
-
-			phase=stage.finishedAndMaliciousReciever;
-			senderAddress.transfer(price);
-			return false;
-		}
-
-		operation=uint8(gateMerkleProof[0][1]);
-
-		Outy=new bytes(encodedVectors_ThisGate[0].length);
-		Outy=Dec(encodedVectors_ThisGate[0],key);
-
-		for(uint i=2;i<2+maxInputLinesToAGate;i++)    //noOFinputToThisParticularGate
-		{
-			if(uint8(gateMerkleProof[0][i])==totalNumberOfGates){   //totalNumberOfGates
-			  break;
-			}
-			noOFinputToThisParticularGate++;
-		}
-
-		indicesOfInputGates=new uint8[] (noOFinputToThisParticularGate);
-
-		for(uint i=0;i<noOFinputToThisParticularGate;i++)   //noOFinputToThisParticularGate
-		{
-			indicesOfInputGates[i]=(uint8(gateMerkleProof[0][i+2]));
-		}
-
-		if(complaint.length-1!=noOFinputToThisParticularGate)
-		{
-		  return false;
-		}
-
-		//uptoComplaintLength=true;
-		inputVectorsToTheGate = new bytes[] (complaint.length-1);
-
-		for(uint i=0;i<indicesOfInputGates.length;i++)
-		{
-				if(!Mverify(complaint[i+1],indicesOfInputGates[i]))
+			for(uint i=0;i<encodedVectors_ThisGate.length;i++)
+			{
+				if(Hash(encodedVectors_ThisGate[i])!=complaint[i][0])
 				{
-					phase=stage.finishedAndMaliciousReciever;
 					senderAddress.transfer(price);
 					return false;
 				}
-				inputVectorsToTheGate[i]=new bytes (encodedVectors_ThisGate[i+1].length);
-				inputVectorsToTheGate[i]=Dec(encodedVectors_ThisGate[i+1],key);
-		}
+			}
 
-		OperationValue=Operation(operation,inputVectorsToTheGate);
-		Out=bytesToBytes32(Outy);
+			gateIndex=uint8(gateMerkleProof[0][0]);
 
-		if(Out!=OperationValue)
-		{
-			validComplain=true;
-			phase=stage.finishedAndMaliciousSender;
-			return true;
-		}
-		phase=stage.finishedAndMaliciousReciever;
-		senderAddress.transfer(price);
-		return false;
+			if(!Mverify(complaint[0],gateIndex))
+			{
+				senderAddress.transfer(price);
+				return false;
+			}
+
+			if(!MverifyForGate(gateMerkleProof,gateIndex))
+			{
+				senderAddress.transfer(price);
+				return false;
+			}
+
+			operation=uint8(gateMerkleProof[0][1]);
+
+			Outy=new bytes(encodedVectors_ThisGate[0].length);
+			Outy=Dec(encodedVectors_ThisGate[0],key);
+
+			for(uint i=2;i<2+maxInputLinesToAGate;i++)    //noOFinputToThisParticularGate
+			{
+				if(uint8(gateMerkleProof[0][i])==totalNumberOfGates){   //totalNumberOfGates
+				  break;
+				}
+				noOFinputToThisParticularGate++;
+			}
+
+			indicesOfInputGates=new uint8[] (noOFinputToThisParticularGate);
+
+			for(uint i=0;i<noOFinputToThisParticularGate;i++)   //noOFinputToThisParticularGate
+			{
+				indicesOfInputGates[i]=(uint8(gateMerkleProof[0][i+2]));
+			}
+
+			if(complaint.length-1!=noOFinputToThisParticularGate)
+			{
+			  return false;
+			}
+
+			//uptoComplaintLength=true;
+			inputVectorsToTheGate = new bytes[] (complaint.length-1);
+
+			for(uint i=0;i<indicesOfInputGates.length;i++)
+			{
+					if(!Mverify(complaint[i+1],indicesOfInputGates[i]))
+					{
+						senderAddress.transfer(price);
+						return false;
+					}
+					inputVectorsToTheGate[i]=new bytes (encodedVectors_ThisGate[i+1].length);
+					inputVectorsToTheGate[i]=Dec(encodedVectors_ThisGate[i+1],key);
+			}
+
+			OperationValue=Operation(operation,inputVectorsToTheGate);
+			Out=bytesToBytes32(Outy);
+
+			if(Out!=OperationValue)
+			{
+				validComplain=true;
+				receiverAddress.transfer(price);
+				return true;
+			}
+
+			senderAddress.transfer(price);
+			return false;
 	}
 
 
-	function  Mverify(bytes32[] memory complaint,uint _index)  public view returns(bool)
+	function  Mverify(bytes32[] memory complaint,uint _index)  internal view returns(bool)
 	{
 		bytes32 _value;
 		_value=complaint[0];
@@ -376,7 +387,7 @@ function Hash(bytes memory _toBeHashed) internal pure returns(bytes32)
 		return (_value==EncInputRoot);
 	}
 
-	function  MverifyForGate(bytes32[] memory gateProof,uint _index)  public view returns(bool)
+	function  MverifyForGate(bytes32[] memory gateProof,uint _index)  internal view returns(bool)
 	{
 		bytes32 _value;
 		_value=gateProof[0];
@@ -426,21 +437,32 @@ function Hash(bytes memory _toBeHashed) internal pure returns(bytes32)
 
 
 	//fn is called by sender after the faiswap completion to get the ether
-	function senderGetEther() allowed(senderAddress,stage.keyRevealed) public{
+	/*function senderGetEther() allowedBefore(senderAddress,stage.keyRevealed) public{
 		require(now/10>timeout);
 		senderAddress.transfer(price);
 		nextStage();
 
+	}*/
+
+	function gotTheCorrectFiles() allowedBefore(receiverAddress,stage.revealed) public{
+		nextStage();
+		senderAddress.transfer(price);
 	}
+
 
 	//function is called by receiver in the accepted stage if the receiver doesn't reveal the key within the time. The
 	//ether is transferred to the receiver
-	function receiverGetEther() allowed(receiverAddress,stage.accepted) public{
-		require(now/10>timeout);
+	function receiverGetEther_SenderNotRevealedKey() allowedAfter(receiverAddress,stage.active) public{
 		receiverAddress.transfer(price);
-		phase=stage.finishedAndMaliciousSender;
-
+		phase=stage.finalized;
 	}
+
+	function senderGetEther_ReceiverNoComplainMessage() allowedAfter(senderAddress,stage.revealed) public{
+		senderAddress.transfer(price);
+		phase=stage.finalized;
+	}
+
+
 
 	//log function
 	function log2(uint x) private pure returns (uint y)

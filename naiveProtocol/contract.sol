@@ -10,10 +10,6 @@ contract protocol2{
 	uint public noOfFileChunks;
 	bytes32[] public hashedFileChunks;
 	bytes32[] public hashedEncryptedFileChunks;
-	bool public complaintInside;
-	bytes32 public decrypted;
-	bytes public encrypted;
-	bytes32 public hashDecrypted;
 
 	//address of the two parties
 	address payable public  senderAddress;
@@ -23,22 +19,33 @@ contract protocol2{
   uint public timeout;
 
 	//stages of fairswap
-	enum stage{created,initialized,accepted,keyRevealed,finishedAndBothHonestParties,finishedAndMaliciousSender,finishedAndMaliciousReciever}
-	//created - sender creates the Contract
-	//initialized - sender initializes the state variables
-	//stages created and initialized happens together when contract is deployed
-	//accepted - receiver has paid the price
-	//keyRevealed - sender has revealed the key
-	//finishedAndBothHonestParties - fairswap completed and both parties were honest
-	//finishedAndMaliciousSender - fairswap not completed as sender was malicious
-	//finishedAndMaliciousReciever - fairswap not completed as receiver was malicious
+	enum stage{created,initialized,active,revealed,finalized}
 
 	stage public phase = stage.created;
+
+	//modifier to check the eligibility of party, time and phase for a function execution
+	modifier allowedBefore(address _party,stage _stage){
+		require(phase==_stage);
+		require(now<timeout);
+		require(msg.sender == _party);
+		_;
+	}
+
+	modifier allowedAfter(address _party,stage _stage){
+		require(phase==_stage);
+		require(now>timeout);
+		require(msg.sender == _party);
+		_;
+	}
 
 	//fn used to move to the next stage fron the current stage
 	function nextStage() public{
 		phase=stage(uint(phase)+1);
-		timeout=now/10+ 10 seconds;
+		timeout=now + 20 seconds;
+	}
+
+	function Nowy() public {
+		Now=now;
 	}
 
 	//state variable initilization including the circuit gate's operation
@@ -62,60 +69,49 @@ contract protocol2{
 		nextStage();
 	}
 
-	//modifier to check the eligibility of party, time and phase for a function execution
-	modifier allowed(address _party,stage _stage){
-		require(phase==_stage);
-		require(now/10<timeout);
-		require(msg.sender == _party);
-		_;
-	}
-
-	function keyReveal(bytes memory _key) allowed(senderAddress,stage.accepted) public {
-		key=_key;
-		nextStage();
-	}
+/* allowedBefore(senderAddress,stage.active) */
 	//receiver pays the price for the digital good
 	//If receiver pays the required ether,then the stage goes from initialized to accepted.
 	//In the case when receiver pays lesser amount,the ehter is transferred back to the receiver
 	//and the stage goes from initialized to finishedAndMaliciousReciever
-	function accept() allowed(msg.sender,stage.initialized) payable public {
+	/*  allowedBefore(msg.sender,stage.initialized) */
+	function accept() allowedBefore(msg.sender,stage.initialized)  payable public {
 
-		receiverAddress=msg.sender;
 		if(msg.value < price)
 		{
 			msg.sender.transfer(msg.value);
-			phase=stage.finishedAndMaliciousReciever;
 		}
 		else
 		{
+			receiverAddress=msg.sender;
 			nextStage();
-		}
+		 }
 	}
 
-	function complain(bytes memory EncryptedFileChunk,uint index) allowed(receiverAddress,stage.keyRevealed) public returns(bool){
 
-		complaintInside=true;
-		encrypted=EncryptedFileChunk;
-		decrypted=Hash(EncryptedFileChunk);
-		hashDecrypted=hashedEncryptedFileChunks[index];
+	function keyReveal(bytes memory _key) allowedBefore(senderAddress,stage.active)  public {
+		key=_key;
+		nextStage();
+	}
+
+	function complain(bytes memory EncryptedFileChunk,uint index) allowedBefore(receiverAddress,stage.revealed) public returns(bool){
+
 		if(hashedEncryptedFileChunks[index]!=Hash(EncryptedFileChunk))
 		{
-			phase=stage.finishedAndMaliciousReciever;
+			phase=stage.finalized;
 			senderAddress.transfer(price);
 			return false;
 		}
 		if(hashedFileChunks[index]!=Hash(Dec(EncryptedFileChunk)))
 		{
-			phase=stage.finishedAndMaliciousSender;
+			phase=stage.finalized;
 			receiverAddress.transfer(price);
 			return true;
 		}
-		else
-		{
-			phase=stage.finishedAndMaliciousReciever;
-			senderAddress.transfer(price);
-			return false;
-		}
+
+		phase=stage.finalized;
+		senderAddress.transfer(price);
+		return false;
 	}
 
 	//Operation function is circuit specific
@@ -154,20 +150,20 @@ contract protocol2{
 	}
 
 	//fn is called by sender after the faiswap completion to get the ether
-	function senderGetEther() allowed(senderAddress,stage.keyRevealed) public{
-		require(now/10>timeout);
+	/* allowedAfter(senderAddress,stage.revealed) */
+	function senderGetEther() allowedAfter(senderAddress,stage.revealed)   public{
+		/* require(now>timeout); */
 		senderAddress.transfer(price);
-		nextStage();
+		phase=stage.finalized;
 
 	}
 
 	//function is called by receiver in the accepted stage if the receiver doesn't reveal the key within the time. The
 	//ether is transferred to the receiver
-	function receiverGetEther() allowed(receiverAddress,stage.accepted) public{
-		require(now/10>timeout);
+	function receiverGetEther() allowedAfter(receiverAddress,stage.active) public{
+		/* require(now>timeout); */
 		receiverAddress.transfer(price);
-		phase=stage.finishedAndMaliciousSender;
-
+		phase=stage.finalized;
 	}
 
 }
