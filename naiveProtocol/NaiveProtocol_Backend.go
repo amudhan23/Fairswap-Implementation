@@ -9,10 +9,7 @@ import(
 	"encoding/json"
 	"sync"
 	"strconv"
-	 // "reflect"
-
 	"time"
-  // "context"
   "crypto/ecdsa"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -25,6 +22,7 @@ import(
    import_contracts "./contracts"
 )
 
+//the following parameters are got as command line arguments
 var buffer_size int
 var noOfFileChunks int
 var keyLength int
@@ -47,8 +45,9 @@ type SenderToContractStruct struct{
 func main(){
 
 		//channels
-		channel_SenToRec:=make(chan []byte)				//sender sends the byterarray(of Id,Keycommit,EncryptedOutputOfGates)
+		channel_SenToRec:=make(chan []byte)				//sender sends the byterarray(channel for sending EncryptedFileChunks from sender to receover)
 
+		//log file as well as std out
 		f, err := os.OpenFile("text2	.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
 				log.Fatalf("error opening file: %v", err)
@@ -57,7 +56,7 @@ func main(){
 		wrt := io.MultiWriter(os.Stdout, f)
 		log.SetOutput(wrt)
 
-
+		//getting command line arguments for initialization
 	 	if(len(os.Args)<2){
 			buffer_size=32
 			noOfFileChunks=8
@@ -75,13 +74,11 @@ func main(){
 			keyLength=buffer_size
 		}
 
-		//sender address generation
+		//sender transactor generation
 		authSender,_ := AuthAndAddressGeneration()
-		// fmt.Println("\n->Sender\nSender Address :",senderAddress)
 
-		//receiver address generation
+		//receiver transactor generation
 		authReceiver,_ := AuthAndAddressGeneration()
-		// fmt.Println("\n->Receiver\nReceiver Address :",receiverAddress)
 
 		//blockchain creation
 		alloc := make(core.GenesisAlloc)
@@ -90,24 +87,27 @@ func main(){
 		//client
 		client := backends.NewSimulatedBackend(alloc,60000000000)
 
-		//go routines
-		// ctx := context.Background()
+		//wait group serves the purpose of synchronization
 		var wg sync.WaitGroup
-		wg.Add(2)
+		wg.Add(2) //waitgroup made to 2 since we two go routines running in parallel
 		//go routines
 		go Sender(authSender,client,channel_SenToRec,&wg)
 		go Receiver_malicious_HashFileMismatch(authReceiver,client,channel_SenToRec,&wg)
 
-		wg.Wait()
+		wg.Wait()  //Wait blocks until the WaitGroup counter is zero
 
 }
+
+
 
 //Sender function
 //The functoin executes honest sender's role in fairswap
 func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,channel_SenToRec chan []byte,wg *sync.WaitGroup){
 
-	//reading from a file "a.txt" and storing bytearray of 32 bytes in FileChunks of size equal to noOfFileChunks
+	/*Computing all the variables in sender to receiever structure and sender to contract structure*/
+	/**//*computing variables time starts*/
 	sender_round1_computingTime_calculatingVariables_start := time.Now()
+		//reading from a file "a.txt" and storing bytearray of 32 bytes in FileChunks of size equal to noOfFileChunks
 	FileChunks:=FileRead()
 
 	//objects
@@ -129,13 +129,18 @@ func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,chan
 	}
 
 	sender_round1_computingTime_calculatingVariables_stop:=time.Now()
+	/**//*computing variables time ends*/
 	log.SetPrefix("\nNaive Protocol - Time ")
 	log.Printf("sender_round1_computingTime_calculatingVariables_time : %v \n", sender_round1_computingTime_calculatingVariables_stop.Sub(sender_round1_computingTime_calculatingVariables_start))
+
+
+
 
 
 	/*Deploy contract*/
 	var err error
 	var tx *types.Transaction
+	/**//*commit time for contract deployment starts*/
 	sender_round1_commitTime_deployingContract_start := time.Now()
 	contractAddress,tx,_, err=import_contracts.DeployProtocol2(
 		authSender,
@@ -149,17 +154,20 @@ func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,chan
 	}
 	client.Commit()
 	sender_round1_commitTime_deployingContract_stop := time.Now()
+	/**//*commit time for contract deployment ends*/
 	log.SetPrefix("\nNaive Protocol - Time ")
 	log.Printf("sender_round1_commitTime_deployingContract_time : %v \n", sender_round1_commitTime_deployingContract_stop.Sub(sender_round1_commitTime_deployingContract_start))
 	log.SetPrefix("\nNaive Protocol - Gas Cost ")
 	log.Println("Sender Round 1 : ",tx.Gas())
 
 
-	sender_round1_communicationTime_sendingEncryptedGateOutputs_start := time.Now()
 
+
+	/*send encrypted file chunks to receiver as a byte array*/
+	/**//*sender sending byte array to receiver time starts*/
+	sender_round1_communicationTime_sendingEncryptedGateOutputs_start := time.Now()
 	SenToRecObject.EncryptedFileChunks=encryptedFileChunks
 
-	//sending the encoded file chunks to the receiver through the channel
 	byteArrayFromSenToRec,err := json.Marshal(SenToRecObject)
 	if err != nil {
 		fmt.Println("error:", err)
@@ -167,9 +175,15 @@ func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,chan
 	channel_SenToRec<-byteArrayFromSenToRec
 
 	sender_round1_communicationTime_sendingEncryptedGateOutputs_stop := time.Now()
+	/**//*sender sending byte array to receiver time ends*/
 	log.SetPrefix("\nNaive Protocol - Time ")
 	log.Printf("sender_round1_communicationTime_sendingEncryptedGateOutputs_time : %v \n", sender_round1_communicationTime_sendingEncryptedGateOutputs_stop.Sub(sender_round1_communicationTime_sendingEncryptedGateOutputs_start))
 
+
+
+
+	/*Sender waiting until the receiver accepts*/
+	/**//*Sender wait time for receiver to accept starts*/
 	sender_round2_waitingTime_forReceiverToAccept_start := time.Now()
 
 	//creating a contract instance
@@ -178,8 +192,10 @@ func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,chan
 			log.Fatal(err)
 	}
 
-
 	//waiting for the receiver to accept
+	//Sender calls the contract state variable Phase after every 1 second to know the status of the acceptance.
+	//If true, receiverAcceptedStatus is set as true, loop breaks and proceeded further
+	//If receiverAcceptedStatus is false after the timeout period, the sender has not accepted and the protocol stops.
 	receiverAcceptedStatus:=false
 	for i:=0;i<waitingTime;i++ {
 
@@ -195,14 +211,19 @@ func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,chan
 	}
 
 	sender_round2_waitingTime_forReceiverToAccept_stop := time.Now()
+	/**//*Sender wait time for receiver to accept ends*/
 	log.SetPrefix("\nNaive Protocol - Time ")
 	log.Printf("sender_round2_waitingTime_forReceiverToAccept_time : %v \n", sender_round2_waitingTime_forReceiverToAccept_stop.Sub(sender_round2_waitingTime_forReceiverToAccept_start))
+
+
 
 
 	if(!receiverAcceptedStatus){
 		//Receiver has not accepted within time
 			}else{
 
+							/*Sender Reveals the key after the receiver has accepted within the time limit*/
+							/**//*Key reveal commit time starts*/
 							sender_round3_commitTime_revealKey_start := time.Now()
 							var keyToCon []byte
 							for i:=0;i<keyLength;i++{
@@ -221,12 +242,19 @@ func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,chan
 							client.Commit()
 
 							sender_round3_commitTime_revealKey_stop := time.Now()
+							/**//*Key reveal commit time ends*/
 							log.SetPrefix("\nNaive Protocol - Time ")
 							log.Printf("sender_round3_commitTime_revealKey_time : %v \n", sender_round3_commitTime_revealKey_stop.Sub(sender_round3_commitTime_revealKey_start))
 							log.SetPrefix("\nNaive Protocol - Gas Cost ")
 							log.Println("Sender Round 3 : ",tx.Gas())
 
 
+
+							//Waiting for receiver to give complain or a confirmation that he has received the correct file.
+							//If Receiver gives a confirmation, then the phase goes to finished in the contract.The loop
+							//breaks and the protocol from the sender side is finished.
+							//If receiver doesnt give confirmation or gives a complain, then the phase is till in the 'keyRevealed' after the deadline,
+							//then the receiver then calls the SenderGetEther function to get the ether.
 							sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_start:=time.Now()
 
 									for i:=0;i<waitingTime;i++{
@@ -251,8 +279,10 @@ func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,chan
 									}
 
 									if(Phase==3){
-									 	//sender getting the ether since the receiver has not finished the protocol
 
+										 //sender getting the ether since the receiver has not finished the protocol
+										 //The following loop is to check whether the current blockchain time has exceeded the deadline time set for receiver to produce a
+										 //complain or give a confirmation.
 										 timeout,err:=instance.Timeout(nil)
 										 if err!=nil{
 													 log.Fatal(err)
@@ -262,7 +292,7 @@ func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,chan
 
 											  _,err:=instance.Nowy(&bind.TransactOpts{
 								 					From:authSender.From,
-								 					Signer:authSender.Signer,
+								 					Signer:authSender.Signer,``
 								 				})
 												if err!=nil{
 															log.Fatal(err)
@@ -278,8 +308,10 @@ func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,chan
 												time.Sleep(time.Second*1)
 										 }
 
-										 sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_start:=time.Now()
 
+										//senderGetEther function is being after the receiver walked away from the protocol after key is revealed.
+										/**//*Sender commit time for Get ether function call to be mined starts*/
+										sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_start:=time.Now
 										tx,err=instance.SenderGetEther(&bind.TransactOpts{
 												From:authSender.From,
 												Signer:authSender.Signer,
@@ -292,6 +324,7 @@ func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,chan
 										log.SetPrefix("\nNaive Protocol - Gas Cost ")
 										log.Println("Sender Round 4 ",tx.Gas())
 										sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_stop:=time.Now()
+										/**//*Sender commit time for Get ether function call to be mined ends*/
 										log.SetPrefix("\nNaive Protocol - Time ")
 										log.Printf("sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_time : %v \n", sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_stop.Sub(sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_start))
 							}
@@ -301,22 +334,34 @@ func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,chan
 
 
 //Receiver function
-
+//The functoin executes honest receiver's role in fairswap
 func Receiver(authReceiver *bind.TransactOpts,client *backends.SimulatedBackend,channel_SenToRec chan []byte,wg *sync.WaitGroup){
 
+
+		//Initially the receiver waits for sender to send encrypted file chunks
+		/**//*Waiting time for receiver to get the encrypted file chunks starts*/
 		receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_start := time.Now()
 
 		//getting the encoded filechunks array from sender
 		byteArrayFromSenToRec:=<-channel_SenToRec
 
 		receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_stop := time.Now()
+		/**//*Waiting time for receiver to get the encrypted file chunks ends*/
 		log.SetPrefix("\nNaive Protocol - Time ")
 		log.Printf("receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : %v \n", receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_stop.Sub(receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_start))
 
+
+
+		//the receiver does the following things before accepting
+		//1. Unmarshals the encrypted file byte arrray got from sender
+		//2. Gets the hashes of encrypted file chunks put in the contract by the sender
+		//3. Compares the Hashes of encrypted file got from the contract with those of hashes calculated from the encrypted file chunks got from the sender.
+		/**//*the time for receiver to do all these 3 procedure starts*/
 		receiver_round1_computingTime_merkleRootCheck_start := time.Now()
 
 		var Receiver_SenToRecObj SenderToReceiverStruct
 
+		//1.Unmarshalling
 		err:=json.Unmarshal(byteArrayFromSenToRec, &Receiver_SenToRecObj)
 		if err != nil {
 				log.Fatal(err)
@@ -327,17 +372,22 @@ func Receiver(authReceiver *bind.TransactOpts,client *backends.SimulatedBackend,
 				log.Fatal(err)
 		}
 
+		//get the number of filechunks from the contract
 	 _contractNoOfFileChunks,err := instance.NoOfFileChunks(nil)
 	 if err!=nil{
 		 log.Fatal(err)
 	 }
 
 	 boolHashedEncryptedFileCheck:=true
-
-	 //checking whether encoded file chunks got from the sender matches with those got from sender
+	 //3.Comparision
+	 //Conditions checked :
+	 //a) whether the number of hashed encrypted files chunks given to the contract matches with the number of encrypted file chunks got from sender
+	 //b) Whether the hash of encrypted file chunk got from sender matches with the hash of encrypted file chunk given to the contract
+	 //if both these conditions satisfy then the protocol is proceeded further else discarded by the receiver
 	 if(_contractNoOfFileChunks.Cmp(big.NewInt(int64(len(Receiver_SenToRecObj.EncryptedFileChunks))))==0){
 		var i int64
 		for i=0;i<int64(noOfFileChunks);i++ {
+			//2.Get Hashes of encrypted file from contract
 			value,err:=instance.HashedEncryptedFileChunks(nil,big.NewInt(i))
 			if err!=nil{
 				log.Fatal(err)
@@ -351,21 +401,29 @@ func Receiver(authReceiver *bind.TransactOpts,client *backends.SimulatedBackend,
 	}
 
 	receiver_round1_computingTime_merkleRootCheck_stop := time.Now()
+	/**//*the time for receiver to do all these 3 procedure ends*/
 	log.SetPrefix("\nNaive Protocol - Time ")
 	log.Printf("receiver_round1_computingTime_merkleRootCheck_time : %v \n", receiver_round1_computingTime_merkleRootCheck_stop.Sub(receiver_round1_computingTime_merkleRootCheck_start))
 
 
+
+
+
+	//Proceeds further if the comparison is positive
 	if(boolHashedEncryptedFileCheck){
 
-				receiver_round2_commitTime_Accept_start := time.Now()
 
-				value:=big.NewInt(100)
+
+			//the receiver accepts
+			/**//*Commit time for receiver to accept starts*/
+			receiver_round2_commitTime_Accept_start := time.Now()
+
+			value:=big.NewInt(100)
 
 				tx,err:=instance.Accept(&bind.TransactOpts{
 				From:authReceiver.From,
 				Signer:authReceiver.Signer,
 				Value:value,
-				// GasLimit:gasLimit,
 			})
 			if err != nil {
 					log.Fatal(err)
@@ -373,13 +431,19 @@ func Receiver(authReceiver *bind.TransactOpts,client *backends.SimulatedBackend,
 			client.Commit()
 
 			receiver_round2_commitTime_Accept_stop := time.Now()
+			/**//*Commit time for receiver to accept ends*/
 			log.SetPrefix("\nNaive Protocol - Time ")
 			log.Printf("receiver_round2_commitTime_Accept_time : %v \n", receiver_round2_commitTime_Accept_stop.Sub(receiver_round2_commitTime_Accept_start))
 			log.SetPrefix("\nNaive Protocol - Gas Cost ")
 			log.Println("Receiver Round 2 : ",tx.Gas())
 
 
-			//waiting for the sender to reveal key
+
+
+			//waiting for the sender to reveal the key
+			//If the sender reveals the key within the deadline the loop breaks and proceeded further for the extraction.
+			//If the sender doesn't reveal the key within the deadline, receiver will call the ReceiverGetEther function to get the ether.
+			/**//* the sender waiting time for sender to reveal the key starts*/
 			receiver_round3_waitingTime_forSenderToRevealKey_start := time.Now()
 			senderKeyRevealedStatus:=false
 			var contract_Key []byte
@@ -397,20 +461,20 @@ func Receiver(authReceiver *bind.TransactOpts,client *backends.SimulatedBackend,
 					senderKeyRevealedStatus=true
 					break;
 				}
-				if(Phase==4){
-					senderKeyRevealedStatus=true
-					break;
-				}
 				time.Sleep(time.Second *1)
 			}
 			receiver_round3_waitingTime_forSenderToRevealKey_stop := time.Now()
+			/**//* the sender waiting time for sender to reveal the key ends*/
 			log.SetPrefix("\nNaive Protocol - Time ")
 			log.Printf("receiver_round3_waitingTime_forSenderToRevealKey_time : %v \n", receiver_round3_waitingTime_forSenderToRevealKey_stop.Sub(receiver_round3_waitingTime_forSenderToRevealKey_start))
 
 
 
 			if(!senderKeyRevealedStatus){
-						//sender has not revealed the wrong key
+
+
+
+					 //sender has not revealed the wrong key
 					 timeout,err:=instance.Timeout(nil)
 		 			 if err!=nil{
 		 						 log.Fatal(err)
@@ -436,26 +500,38 @@ func Receiver(authReceiver *bind.TransactOpts,client *backends.SimulatedBackend,
 		 					time.Sleep(time.Second*1)
 		 			 }
 
+					 // receiverGetEther function being called
+					 /**//*the commit time for receiverGetEther function call starts*/
 					 	receiver_round3_commitTime_senderKeyNotRevealedGettingEther_start := time.Now()
 						tx,err=instance.ReceiverGetEther(&bind.TransactOpts{
 								From:authReceiver.From,
 								Signer:authReceiver.Signer,
 								Value: nil,
-								// GasLimit:gasLimit,
 							})
 						if err!=nil{
 									log.Fatal(err)
 						}
 						client.Commit()
 						receiver_round3_commitTime_senderKeyNotRevealedGettingEther_stop := time.Now()
+						/**//*the commit time for receiverGetEther function call ends*/
 						log.SetPrefix("\nNaive Protocol - Gas Cost ")
 						log.Println("Receiver Round 3 (Sender Not Revealed Key) : ",tx.Cost())
 						log.SetPrefix("\nNaive Protocol - Time ")
 						log.Printf("receiver_round3_commitTime_senderKeyNotRevealedGettingEther_time : %v \n", receiver_round3_commitTime_senderKeyNotRevealedGettingEther_stop.Sub(receiver_round3_commitTime_senderKeyNotRevealedGettingEther_start))
 
 
+
+
 			} else{
 
+						//Extraction
+						//1. The receiver gets the hashes of file chunks from the contract
+						//2. Extraction function is called : The function basically decrypts the encrypted file chunks got from the sender hashes it and then compares
+						// with the hash of file chunks got from the contract. If there is some discrepancy then the index of that gate is returned by the function.
+						//Then a complain is given.
+						//If the comparision is positive, then the receiver can either give a confirmation that he received the correct file or else walk away.
+						//In our implemenation doesn't give this confirmation
+						/**//*to calculate the time required for receiver to perfoem the extraction function starts*/
 						receiver_round4_computingTime_extraction_start := time.Now()
 
 						 _contractHashedFileChunks:=make([][hashFunctionOutputBitSize]byte,noOfFileChunks)
@@ -474,8 +550,8 @@ func Receiver(authReceiver *bind.TransactOpts,client *backends.SimulatedBackend,
 						}
 
 						isComplain,index:=Extract(_contractHashedFileChunks,Receiver_SenToRecObj.EncryptedFileChunks,_ReceiverKey)
-						//malicious reciever
 						receiver_round4_computingTime_extraction_stop := time.Now()
+						/**//*to calculate the time required for receiver to perfoem the extraction function ends*/
 						log.SetPrefix("\nNaive Protocol - Time ")
 						log.Printf("receiver_round4_computingTime_extraction_time : %v \n", receiver_round4_computingTime_extraction_stop.Sub(receiver_round4_computingTime_extraction_start))
 
@@ -486,6 +562,7 @@ func Receiver(authReceiver *bind.TransactOpts,client *backends.SimulatedBackend,
 						} else{
 
 								//complain function being called
+								/**//*commit time for receiver to produce the complaint starts*/
 								receiver_round4_commitTime_complain_start := time.Now()
 								var complaintChunk []byte
 								for i:=0;i<buffer_size;i++{
@@ -495,8 +572,6 @@ func Receiver(authReceiver *bind.TransactOpts,client *backends.SimulatedBackend,
 								tx,err=instance.Complain(&bind.TransactOpts{
 									From:authReceiver.From,
 									Signer:authReceiver.Signer,
-									Value:nil,
-									// GasLimit:gasLimit,
 								},complaintChunk,big.NewInt(int64(index)))
 								if err!=nil{
 									log.Fatal(err)
@@ -504,6 +579,7 @@ func Receiver(authReceiver *bind.TransactOpts,client *backends.SimulatedBackend,
 								client.Commit()
 
 								receiver_round4_commitTime_complain_stop := time.Now()
+								/**//*commit time for receiver to produce the complaint ends*/
 								log.SetPrefix("\nNaive Protocol - Time ")
 								log.Printf("receiver_round4_commitTime_complain_time : %v \n", receiver_round4_commitTime_complain_stop.Sub(receiver_round4_commitTime_complain_start))
 								log.SetPrefix("\nNaive Protocol - Gas Cost ")
@@ -516,6 +592,7 @@ func Receiver(authReceiver *bind.TransactOpts,client *backends.SimulatedBackend,
 		}
 	wg.Done()
 }
+
 
 func FileRead() ([][]byte){
 	var currentByte int64 = 0
@@ -546,6 +623,8 @@ func FileRead() ([][]byte){
 	file.Close()
 	return FileChunks
 }
+
+
 //generating a  computing party in the blockchain
 func AuthAndAddressGeneration() (*bind.TransactOpts,common.Address){
 
@@ -591,7 +670,7 @@ func keyGenerate() ([]byte){
 		//Here
 	  _, err := rand.Read(keyGen)
     if err != nil {
-        // handle error here
+        log.Fatal(err)
     }
 
 
@@ -613,7 +692,7 @@ func Encrypt(plainText []byte,key []byte) ([]byte) {
 }
 
 func setPrice(object *SenderToContractStruct){
-	object.Price=*big.NewInt(80)     //800 wei
+	object.Price=*big.NewInt(80)     //80 wei
 }
 
 func Decrypt(encryptedtext []byte,key []byte) ([]byte){
@@ -638,7 +717,6 @@ func Extract(_hashedFileChunks [][hashFunctionOutputBitSize]byte, _encryptedFile
 
 func HashChunks(_tobeHashedArray [][]byte) ([][hashFunctionOutputBitSize]byte){
 
-		// var hashedArray [][hashFunctionOutputBitSize]byte
 		hashedArray:=make([][hashFunctionOutputBitSize]byte,noOfFileChunks)
 		for i:=0;i<noOfFileChunks;i++{
 			hashedArray[i]=Hash(_tobeHashedArray[i])
@@ -655,10 +733,6 @@ func EncryptFileChunks(_fileChunks [][]byte,key []byte) ([][]byte){
 	}
 	return encryptedFileChunks
 }
-
-//func createMaliciousEncryptedFileChunk(encryptedFileChunks [noOfFileChunks][buffer_size]byte)
-
-
 
 
  func createMaliciousHashIndexExchangeFileChunk(HashedEncryptedFileChunks [][hashFunctionOutputBitSize]byte) ([][hashFunctionOutputBitSize]byte){
