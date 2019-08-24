@@ -1,0 +1,11 @@
+Creating a workspace
+File : createWorkspace.sh
+Creates two nodes,accounts and mines
+Run : bash ./createWorkspace.sh <numberOfAccountsInEachNode>
+Node1 will have a extra account so that this account be set as the ether base account and will not disturb other account's ether value unless participated in the protcols.
+
+
+Running the protocol
+The protocol is run through a bash script.
+Run : bash ./runProtocols.sh
+A sample input to the bash script is given in the file 'parameter.go'

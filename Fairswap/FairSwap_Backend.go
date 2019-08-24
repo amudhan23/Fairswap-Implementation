@@ -1,7 +1,7 @@
 package main
 
 import(
-	// "fmt"
+	"fmt"
 	kec "github.com/ethereum/go-ethereum/crypto"
 	"os"
 	"io"
@@ -39,7 +39,7 @@ const hashFunctionOutputBitSize=32
 const gateTupleSize=32
 const waitingTime=10
 
-var contractAddress common.Address
+var contractAddress []common.Address
 
 type SenderToReceiverStruct struct {
 		EncryptedOutputOfGates [][]byte
@@ -85,17 +85,18 @@ func main(){
 			totalNumberOfGates=2*noOfInputGates
 		}
 
-		authSender,_ := AuthAndAddressGeneration()
+		contractAddress=make([]common.Address,2)
+
+		alloc := make(core.GenesisAlloc)
+
+		authSenders:=make([]*bind.TransactOpts,2)
+		authReceivers:=maek([]*bind.TransactOpts,2)
 		//log.Println("\n->Sender\nSender Address :",senderAddress)
 
-		//receiver address generation
-		authReceiver,_ := AuthAndAddressGeneration()
-		//log.Println("\n->Receiver\nReceiver Address :",receiverAddress)
-
-		//blockchain creation
-		alloc := make(core.GenesisAlloc)
-		alloc[authSender.From] = core.GenesisAccount{Balance: big.NewInt(11000000000000000)}  //1.1 ether
-		alloc[authReceiver.From] = core.GenesisAccount{Balance: big.NewInt(250000000000000000)} //2.5 ether
+		for i:=0;i<2;i++{
+			alloc[authSender[i].From] = core.GenesisAccount{Balance: big.NewInt(11000000000000000)}  //1.1 ether
+			alloc[authReceiver[i].From] = core.GenesisAccount{Balance: big.NewInt(250000000000000000)} //2.5 ether
+		}
 		//client
 		client := backends.NewSimulatedBackend(alloc,60000000000)
 
@@ -104,15 +105,15 @@ func main(){
 		var wg sync.WaitGroup
 		wg.Add(2)
 		//go routines
-		go Sender(ctx,authSender,client,channel_SenToRec,&wg)
-		go Receiver(ctx,authReceiver,client,channel_SenToRec,&wg)
+		go Sender(ctx,authSender,client,channel_SenToRec,&wg,pairIndex)
+		go Receiver(ctx,authReceiver,client,channel_SenToRec,&wg,pairIndex)
 
 		wg.Wait()
 
 }
 
 
-func Sender(ctx context.Context,authSender *bind.TransactOpts,client *backends.SimulatedBackend,channel_SenToRec chan []byte,wg *sync.WaitGroup){
+func Sender(ctx context.Context,authSender *bind.TransactOpts,client *backends.SimulatedBackend,channel_SenToRec chan []byte,wg *sync.WaitGroup,pairIndex int){
 
 	sender_round1_computingTime_calculatingVariables_start := time.Now()
 

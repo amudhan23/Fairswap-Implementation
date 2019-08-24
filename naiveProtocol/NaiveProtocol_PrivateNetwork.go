@@ -13,7 +13,7 @@ import(
   "context"
   "crypto/ecdsa"
 //	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
-"github.com/ethereum/go-ethereum/accounts/keystore"
+// "github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -50,18 +50,16 @@ func main(){
 		channel_RecToMainRev:=make(chan string)
 		channel_SenToMain:=make(chan string)
 
-		keystoreNode1 := keystore.NewKeyStore("/home/amudhan/workspace/node1/keystore", keystore.StandardScryptN, keystore.StandardScryptP)
-		allAccountsFromNode1:=keystoreNode1.Accounts()
-		fmt.Println("accountsFromKeyStore : ",allAccountsFromNode1)
 
-		//var ctx context.Context
-		clientNode1,err := ethclient.Dial("/home/amudhan/workspace/node1/geth.ipc")
+
+		var ctx context.Context
+		clientNode1,err := ethclient.Dial("/home/amudhan/workspace2/node1/geth.ipc")
 		if err != nil {
 					log.Fatal(err)
 		}
 		fmt.Println(reflect.TypeOf(clientNode1))
 
-		accountAddressNode1:=common.HexToAddress("f20dd9934c1c95acd49c8b1aebd3fe8526213735")
+		accountAddressNode1:=common.HexToAddress("bf41fd7f78de80a85bdce83b154108e4de19f8c0")
 		accountNode1orSenderInitialBalance, err := clientNode1.BalanceAt(context.Background(),accountAddressNode1, nil)
 		if err != nil{
 				log.Fatal(err)
@@ -69,7 +67,7 @@ func main(){
 		fmt.Println("-->Main\naccountNode1orSenderInitialBalance : ",accountNode1orSenderInitialBalance,"\n Account address : ",accountAddressNode1)
 
 		var node1Reader io.Reader
-		node1Reader, err = os.Open("/home/amudhan/workspace/node1/keystore/UTC--2019-07-09T06-25-45.157497144Z--f20dd9934c1c95acd49c8b1aebd3fe8526213735")
+		node1Reader, err = os.Open("/home/amudhan/workspace2/node1/keystore/UTC--2019-08-08T18-29-45.601668268Z--bf41fd7f78de80a85bdce83b154108e4de19f8c0")
 		fmt.Println(reflect.TypeOf(node1Reader))
 		if err != nil{
 				log.Fatal(err)
@@ -85,18 +83,16 @@ func main(){
 		fmt.Println("\n\n\n\n")
 
 		//2nd node
-		keystoreNode2 := keystore.NewKeyStore("/home/amudhan/workspace/node2/keystore", keystore.StandardScryptN, keystore.StandardScryptP)
-		allAccountsFromNode2 :=keystoreNode2.Accounts()
-		fmt.Println("allAccountsFromNode2 : ",allAccountsFromNode2)
+
 
 		//var ctx context.Context
-		clientNode2,err := ethclient.Dial("/home/amudhan/workspace/node2/geth.ipc")
+		clientNode2,err := ethclient.Dial("/home/amudhan/workspace2/node2/geth.ipc")
 		if err != nil {
 					log.Fatal(err)
 		}
 		fmt.Println(reflect.TypeOf(clientNode2))
 
-		accountAddressNode2:=common.HexToAddress("6fb57c7787b4373c774f948fb9c9c8d0269cfa62")
+		accountAddressNode2:=common.HexToAddress("850a23231bb1c329fc472260e6366603bfe9c3fc")
 		accountNode2orReceiverBalance, err := clientNode2.BalanceAt(context.Background(),accountAddressNode2, nil)
 		if err != nil{
 				log.Fatal(err)
@@ -104,7 +100,7 @@ func main(){
 		fmt.Println("\naccountNode2BalanceInitial : ",accountNode2orReceiverBalance,"\n AccountNode2 address : ",accountAddressNode2)
 
 		var node2Reader io.Reader
-		node2Reader, err = os.Open("/home/amudhan/workspace/node2/keystore/UTC--2019-07-09T06-31-17.127703026Z--6fb57c7787b4373c774f948fb9c9c8d0269cfa62")
+		node2Reader, err = os.Open("/home/amudhan/workspace/node2/keystore/UTC--2019-08-08T18-30-20.635313092Z--850a23231bb1c329fc472260e6366603bfe9c3fc")
 		fmt.Println(reflect.TypeOf(node2Reader))
 		if err != nil{
 				log.Fatal(err)
