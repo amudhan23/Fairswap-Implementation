@@ -167,15 +167,24 @@ func main(){
 
 		}
 
+		// var channel_SenToRec [noOfPairsOfBuyersAndSellers]chan byte
+		// for i := range channel_SenToRec {
+   	// 		channel_SenToRec[i] = make(chan byte)
+		// }
+
+		channel_SenToRec:=make([]chan []byte,noOfPairsOfBuyersAndSellers)
+		for i := range channel_SenToRec {
+	 		channel_SenToRec[i] = make(chan []byte)
+	 }
+
 		//go routines
 		var wg sync.WaitGroup
 		wg.Add(2*noOfPairsOfBuyersAndSellers)
 		for i:=0;i<noOfPairsOfBuyersAndSellers;i++{
 			pairIndex:=i
 			ctx := context.Background()
-			channel_SenToRec:=make(chan []byte)
-			go Sender(ctx,authSenders[pairIndex],clientNode1,channel_SenToRec,&wg,pairIndex)
-			go Receiver(ctx,authReceivers[pairIndex],clientNode2,channel_SenToRec,&wg,pairIndex)
+			go Sender(ctx,authSenders[pairIndex],clientNode1,channel_SenToRec[pairIndex],&wg,pairIndex)
+			go Receiver(ctx,authReceivers[pairIndex],clientNode2,channel_SenToRec[pairIndex],&wg,pairIndex)
 		}
 
 		wg.Wait()  //Wait blocks until the WaitGroup counter is zero
