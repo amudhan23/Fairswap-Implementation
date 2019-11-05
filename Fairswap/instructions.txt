@@ -1,0 +1,23 @@
+Fairswap
+Backend
+go run FairSwap_Backend.go <buffer_size> <noOfFileChunks> <noOfPairsOfBuyersAndSellers> <logFilePath> <inputTextFilePath>
+
+eg : go run FairSwap_Backend.go 32 8 2 /home/amudhan/protocols/Fairswap/text6.log /home/amudhan/protocols/Fairswap/input.txt
+
+To run in private network
+1. Have a workspace directory with enough accounts (or) run createWorkspace.sh for creating the accounts.
+	command : bash ./createWorkspace.sh <noOfPairsOfBuyersAndSellers>
+2. run run_Fairswap_private.sh
+	command : bash ./run_Fairswap_private.sh
+3.give the parameters :
+	<buffer_size> <noOfFileChunks> <noOfPairsOfBuyersAndSellers> <node1_keystoreDirectory_path> <node2_keystoreDirectory_path> <node1_endpoind> <node2_endpoint> <inputTextFilePath> <logFilePath>
+
+	eg : 64 16 2 0 /home/amudhan/protocols/Fairswap/workspace/node1/keystore /home/amudhan/protocols/Fairswap/workspace/node2/keystore /home/amudhan/protocols/Fairswap/workspace/node1/geth.ipc /home/amudhan/protocols/Fairswap/workspace/node2/geth.ipc /home/amudhan/protocols/Fairswap/input.txt text.log
+
+Similarly for NaiveProtocol
+Backend
+go run NaiveProtocol_Backend.go 32 8 2 /home/amudhan/protocols/Fairswap/text6.log /home/amudhan/protocols/NaiveProtocol/input.txt
+
+Private Network
+parameters eg:
+64 16 0 2 /home/amudhan/protocols/NaiveProtocol/workspace/node1/keystore /home/amudhan/protocols/NaiveProtocol/workspace/node2/keystore /home/amudhan/protocols/NaiveProtocol/workspace/node1/geth.ipc /home/amudhan/protocols/NaiveProtocol/workspace/node2/geth.ipc /home/amudhan/protocols/NaiveProtocol/input.txt text.log

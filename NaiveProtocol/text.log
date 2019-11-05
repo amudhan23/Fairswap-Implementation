@@ -1,0 +1,293 @@
+
+Naive Protocol - Time 2019/09/01 17:49:44 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_computingTime_calculatingVariables_time :  186612
+
+Naive Protocol - Time 2019/09/01 17:49:44 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_computingTime_calculatingVariables_time :  166093
+
+Naive Protocol - Time 2019/09/01 17:49:47 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_commitTime_deployingContract_time :  3059214188
+
+Naive Protocol - Gas Cost 2019/09/01 17:49:47 Sender Round 1 :  2061818
+
+Naive Protocol - Time 2019/09/01 17:49:47 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_commitTime_deployingContract_time :  3059070805
+
+Naive Protocol - Gas Cost 2019/09/01 17:49:47 Sender Round 1 :  2061690
+
+Naive Protocol - Time 2019/09/01 17:57:17 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_computingTime_calculatingVariables_time :  109828
+
+Naive Protocol - Time 2019/09/01 17:57:17 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_computingTime_calculatingVariables_time :  113005
+
+Naive Protocol - Time 2019/09/01 17:57:19 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_commitTime_deployingContract_time :  2056092771
+
+Naive Protocol - Gas Cost 2019/09/01 17:57:19 Sender Round 1 :  2061818
+
+Naive Protocol - Time 2019/09/01 17:57:19 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_communicationTime_sendingEncryptedGateOutputs_time :  55214
+
+Naive Protocol - Time 2019/09/01 17:57:19 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : %d 
+ 2057118424
+
+Naive Protocol - Time 2019/09/01 17:57:19 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_commitTime_deployingContract_time :  2058436928
+
+Naive Protocol - Gas Cost 2019/09/01 17:57:19 Sender Round 1 :  2061690
+
+Naive Protocol - Time 2019/09/01 17:57:19 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_communicationTime_sendingEncryptedGateOutputs_time :  35498
+
+Naive Protocol - Time 2019/09/01 17:57:19 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : %d 
+ 2059151068
+
+Naive Protocol - Time 2019/09/01 17:57:19 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round1_computingTime_merkleRootCheck_time :  9326708
+
+Naive Protocol - Time 2019/09/01 17:57:19 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round1_computingTime_merkleRootCheck_time :  9757413
+
+Naive Protocol - Time 2019/09/01 17:57:22 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round2_waitingTime_forReceiverToAccept_time :  3021639650
+
+Naive Protocol - Time 2019/09/01 17:57:22 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round2_waitingTime_forReceiverToAccept_time :  3024308609
+
+Naive Protocol - Time 2019/09/01 17:57:22 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round2_commitTime_Accept_time :  3020557495
+
+Naive Protocol - Gas Cost 2019/09/01 17:57:22 Receiver Round 2 :  53036
+
+Naive Protocol - Time 2019/09/01 17:57:22 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round2_commitTime_Accept_time :  3025643607
+
+Naive Protocol - Gas Cost 2019/09/01 17:57:22 Receiver Round 2 :  53036
+
+Naive Protocol - Time 2019/09/01 17:57:23 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round3_waitingTime_forSenderToRevealKey_time :  1002744301
+
+Naive Protocol - Time 2019/09/01 17:57:23 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round3_waitingTime_forSenderToRevealKey_time :  1002472557
+
+Naive Protocol - Time 2019/09/01 17:57:23 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round4_computingTime_extraction_time :  14294152
+
+Naive Protocol - Gas Cost 2019/09/01 17:57:23 Receiver Round 4 :  0
+
+Naive Protocol - Time 2019/09/01 17:57:23 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round4_computingTime_extraction_time :  14815714
+
+Naive Protocol - Gas Cost 2019/09/01 17:57:23 Receiver Round 4 :  0
+
+Naive Protocol - Time 2019/09/01 17:57:23 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round3_commitTime_revealKey_time :  1132857106
+
+Naive Protocol - Gas Cost 2019/09/01 17:57:23 Sender Round 3 :  98838
+
+Naive Protocol - Time 2019/09/01 17:57:23 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round3_commitTime_revealKey_time :  1135709357
+
+Naive Protocol - Gas Cost 2019/09/01 17:57:23 Sender Round 3 :  98838
+
+Naive Protocol - Time 2019/09/01 17:57:44 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_time :  20060404169
+
+Naive Protocol - Time 2019/09/01 17:57:44 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_time :  20063794760
+
+Naive Protocol - Gas Cost 2019/09/01 17:57:49 Sender Round 4  35562
+
+Naive Protocol - Time 2019/09/01 17:57:49 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_time :  3036790405
+
+Naive Protocol - Gas Cost 2019/09/01 17:57:49 Sender Round 4  35562
+
+Naive Protocol - Time 2019/09/01 17:57:49 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_time :  4098410589
+
+Naive Protocol - Time 2019/11/04 14:57:09 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_computingTime_calculatingVariables_time :  115629
+
+Naive Protocol - Time 2019/11/04 14:57:09 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_computingTime_calculatingVariables_time :  108039
+
+Naive Protocol - Time 2019/11/04 14:57:30 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_commitTime_deployingContract_time :  21043856743
+
+Naive Protocol - Gas Cost 2019/11/04 14:57:30 Sender Round 1 :  2061882
+
+Naive Protocol - Time 2019/11/04 14:57:30 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_communicationTime_sendingEncryptedGateOutputs_time :  37967
+
+Naive Protocol - Time 2019/11/04 14:57:30 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : %d 
+ 21044757249
+
+Naive Protocol - Time 2019/11/04 14:57:30 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_commitTime_deployingContract_time :  21046184743
+
+Naive Protocol - Gas Cost 2019/11/04 14:57:30 Sender Round 1 :  2061818
+
+Naive Protocol - Time 2019/11/04 14:57:30 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_communicationTime_sendingEncryptedGateOutputs_time :  19603
+
+Naive Protocol - Time 2019/11/04 14:57:30 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : %d 
+ 21046908159
+
+Naive Protocol - Time 2019/11/04 14:57:30 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round1_computingTime_merkleRootCheck_time :  205110865
+
+Naive Protocol - Time 2019/11/04 14:57:30 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round1_computingTime_merkleRootCheck_time :  211279439
+
+Naive Protocol - Time 2019/11/04 14:57:32 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round2_waitingTime_forReceiverToAccept_time :  2004064210
+
+Naive Protocol - Time 2019/11/04 14:57:32 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round2_waitingTime_forReceiverToAccept_time :  2004200443
+
+Naive Protocol - Time 2019/11/04 14:57:32 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round2_commitTime_Accept_time :  2055452331
+
+Naive Protocol - Gas Cost 2019/11/04 14:57:32 Receiver Round 2 :  53036
+
+Naive Protocol - Time 2019/11/04 14:57:32 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round2_commitTime_Accept_time :  2052242966
+
+Naive Protocol - Gas Cost 2019/11/04 14:57:32 Receiver Round 2 :  53036
+
+Naive Protocol - Time 2019/11/04 14:57:33 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round3_commitTime_revealKey_time :  1019394886
+
+Naive Protocol - Gas Cost 2019/11/04 14:57:33 Sender Round 3 :  98902
+
+Naive Protocol - Time 2019/11/04 14:57:33 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round3_commitTime_revealKey_time :  1029761103
+
+Naive Protocol - Gas Cost 2019/11/04 14:57:33 Sender Round 3 :  98902
+
+Naive Protocol - Time 2019/11/04 14:57:33 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round3_waitingTime_forSenderToRevealKey_time :  1011890846
+
+Naive Protocol - Time 2019/11/04 14:57:33 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round3_waitingTime_forSenderToRevealKey_time :  1011166847
+
+Naive Protocol - Time 2019/11/04 14:57:33 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round4_computingTime_extraction_time :  11999423
+
+Naive Protocol - Gas Cost 2019/11/04 14:57:33 Receiver Round 4 :  0
+
+Naive Protocol - Time 2019/11/04 14:57:33 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round4_computingTime_extraction_time :  13796829
+
+Naive Protocol - Gas Cost 2019/11/04 14:57:33 Receiver Round 4 :  0
+
+Naive Protocol - Time 2019/11/04 14:57:53 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_time :  20022924822
+
+Naive Protocol - Time 2019/11/04 14:57:53 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_time :  20020093594
+
+Naive Protocol - Gas Cost 2019/11/04 14:57:57 Sender Round 4  35562
+
+Naive Protocol - Time 2019/11/04 14:57:57 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_time :  3025015071
+
+Naive Protocol - Gas Cost 2019/11/04 14:57:57 Sender Round 4  35562
+
+Naive Protocol - Time 2019/11/04 14:57:57 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_time :  3023688510
+
+Naive Protocol - Time 2019/11/05 09:23:53 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_computingTime_calculatingVariables_time :  128708
+
+Naive Protocol - Time 2019/11/05 09:23:53 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_computingTime_calculatingVariables_time :  148473
+
+Naive Protocol - Time 2019/11/05 09:23:54 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_commitTime_deployingContract_time :  1052290554
+
+Naive Protocol - Gas Cost 2019/11/05 09:23:54 Sender Round 1 :  2061690
+
+Naive Protocol - Time 2019/11/05 09:23:54 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_communicationTime_sendingEncryptedGateOutputs_time :  84827
+
+Naive Protocol - Time 2019/11/05 09:23:54 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : %d 
+ 1052814094
+
+Naive Protocol - Time 2019/11/05 09:23:54 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round1_computingTime_merkleRootCheck_time :  15020501
+
+Naive Protocol - Time 2019/11/05 09:23:54 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_commitTime_deployingContract_time :  1071858218
+
+Naive Protocol - Gas Cost 2019/11/05 09:23:54 Sender Round 1 :  2061754
+
+Naive Protocol - Time 2019/11/05 09:23:54 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_communicationTime_sendingEncryptedGateOutputs_time :  72836
+
+Naive Protocol - Time 2019/11/05 09:23:54 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : %d 
+ 1072409035
+
+Naive Protocol - Time 2019/11/05 09:23:54 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round1_computingTime_merkleRootCheck_time :  14770284
+
+Naive Protocol - Time 2019/11/05 09:23:54 insufficient funds for gas * price + value
+
+Naive Protocol - Time 2019/11/05 09:26:31 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_computingTime_calculatingVariables_time :  90453
+
+Naive Protocol - Time 2019/11/05 09:26:34 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_commitTime_deployingContract_time :  3043076101
+
+Naive Protocol - Gas Cost 2019/11/05 09:26:34 Sender Round 1 :  2061754
+
+Naive Protocol - Time 2019/11/05 09:26:34 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_communicationTime_sendingEncryptedGateOutputs_time :  46504
+
+Naive Protocol - Time 2019/11/05 09:26:34 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : %d 
+ 3043452927
+
+Naive Protocol - Time 2019/11/05 09:26:34 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round1_computingTime_merkleRootCheck_time :  8238393
+
+Naive Protocol - Time 2019/11/05 09:26:34 insufficient funds for gas * price + value
+
+Naive Protocol - Time 2019/11/05 09:33:39 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_computingTime_calculatingVariables_time :  107292
+
+Naive Protocol - Time 2019/11/05 09:33:39 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_computingTime_calculatingVariables_time :  91866
+
+Naive Protocol - Time 2019/11/05 09:33:47 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_commitTime_deployingContract_time :  8043767477
+
+Naive Protocol - Gas Cost 2019/11/05 09:33:47 Sender Round 1 :  2061882
+
+Naive Protocol - Time 2019/11/05 09:33:47 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_communicationTime_sendingEncryptedGateOutputs_time :  66369
+
+Naive Protocol - Time 2019/11/05 09:33:47 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : %d 
+ 8044242549
+
+Naive Protocol - Time 2019/11/05 09:33:47 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_commitTime_deployingContract_time :  8045409929
+
+Naive Protocol - Gas Cost 2019/11/05 09:33:47 Sender Round 1 :  2061818
+
+Naive Protocol - Time 2019/11/05 09:33:47 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_communicationTime_sendingEncryptedGateOutputs_time :  14702
+
+Naive Protocol - Time 2019/11/05 09:33:47 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : %d 
+ 8045888483
+
+Naive Protocol - Time 2019/11/05 09:33:47 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round1_computingTime_merkleRootCheck_time :  10051479
+
+Naive Protocol - Time 2019/11/05 09:33:47 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round1_computingTime_merkleRootCheck_time :  9343459
+
+Naive Protocol - Time 2019/11/05 09:33:47 failed to estimate gas needed: gas required exceeds allowance (8869061482112237512) or always failing transaction
+
+Naive Protocol - Time 2019/11/05 09:39:53 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_computingTime_calculatingVariables_time :  91241
+
+Naive Protocol - Time 2019/11/05 09:39:53 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_computingTime_calculatingVariables_time :  90573
+
+Naive Protocol - Time 2019/11/05 09:40:19 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_commitTime_deployingContract_time :  26046553718
+
+Naive Protocol - Gas Cost 2019/11/05 09:40:19 Sender Round 1 :  2061882
+
+Naive Protocol - Time 2019/11/05 09:40:19 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_communicationTime_sendingEncryptedGateOutputs_time :  60798
+
+Naive Protocol - Time 2019/11/05 09:40:19 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : %d 
+ 26047338080
+
+Naive Protocol - Time 2019/11/05 09:40:19 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_commitTime_deployingContract_time :  26048965365
+
+Naive Protocol - Gas Cost 2019/11/05 09:40:19 Sender Round 1 :  2061690
+
+Naive Protocol - Time 2019/11/05 09:40:19 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round1_communicationTime_sendingEncryptedGateOutputs_time :  31791
+
+Naive Protocol - Time 2019/11/05 09:40:19 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : %d 
+ 26049836384
+
+Naive Protocol - Time 2019/11/05 09:40:19 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round1_computingTime_merkleRootCheck_time :  15523922
+
+Naive Protocol - Time 2019/11/05 09:40:19 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round1_computingTime_merkleRootCheck_time :  18341138
+
+Naive Protocol - Time 2019/11/05 09:40:20 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round2_waitingTime_forReceiverToAccept_time :  1003647552
+
+Naive Protocol - Time 2019/11/05 09:40:20 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round2_waitingTime_forReceiverToAccept_time :  1011843451
+
+Naive Protocol - Time 2019/11/05 09:40:20 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round2_commitTime_Accept_time :  1013497655
+
+Naive Protocol - Gas Cost 2019/11/05 09:40:20 Receiver Round 2 :  53036
+
+Naive Protocol - Gas Cost 2019/11/05 09:40:20 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round2_commitTime_Accept_time :  1013838494
+
+Naive Protocol - Gas Cost 2019/11/05 09:40:20 Receiver Round 2 :  53036
+
+Naive Protocol - Time 2019/11/05 09:40:24 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round3_commitTime_revealKey_time :  4014808012
+
+Naive Protocol - Gas Cost 2019/11/05 09:40:24 Sender Round 3 :  98902
+
+Naive Protocol - Time 2019/11/05 09:40:24 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round3_commitTime_revealKey_time :  4011534486
+
+Naive Protocol - Gas Cost 2019/11/05 09:40:24 Sender Round 3 :  98902
+
+Naive Protocol - Time 2019/11/05 09:40:24 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round3_waitingTime_forSenderToRevealKey_time :  4003560547
+
+Naive Protocol - Time 2019/11/05 09:40:24 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round3_waitingTime_forSenderToRevealKey_time :  4003730837
+
+Naive Protocol - Time 2019/11/05 09:40:24 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round4_computingTime_extraction_time :  8665889
+
+Naive Protocol - Gas Cost 2019/11/05 09:40:24 Receiver Round 4 :  0
+
+Naive Protocol - Time 2019/11/05 09:40:24 [buffer_size :  64 , noOfFileChunks :  16 ] - receiver_round4_computingTime_extraction_time :  8641749
+
+Naive Protocol - Gas Cost 2019/11/05 09:40:24 Receiver Round 4 :  0
+
+Naive Protocol - Time 2019/11/05 09:41:24 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_time :  60040863853
+
+Naive Protocol - Time 2019/11/05 09:41:24 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_time :  60045831593
+
+Naive Protocol - Gas Cost 2019/11/05 09:41:26 Sender Round 4  35562
+
+Naive Protocol - Time 2019/11/05 09:41:26 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_time :  2008328407
+
+Naive Protocol - Gas Cost 2019/11/05 09:41:26 Sender Round 4  35562
+
+Naive Protocol - Time 2019/11/05 09:41:26 [buffer_size :  64 , noOfFileChunks :  16 ] - sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_time :  2007933077

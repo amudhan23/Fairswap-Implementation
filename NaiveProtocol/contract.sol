@@ -41,7 +41,7 @@ contract protocol2{
 	//fn used to move to the next stage fron the current stage
 	function nextStage() public{
 		phase=stage(uint(phase)+1);
-		timeout=now + 20 seconds;
+		timeout=now + 60 seconds;
 	}
 
 	function Nowy() public {

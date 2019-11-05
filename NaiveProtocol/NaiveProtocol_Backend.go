@@ -1,0 +1,777 @@
+package main
+
+import(
+	"fmt"
+	kec "github.com/ethereum/go-ethereum/crypto"
+	"os"
+	"io"
+	"log"
+	"encoding/json"
+	"sync"
+	"strconv"
+	"time"
+  "crypto/ecdsa"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/core/types"
+	"crypto/rand"
+  "github.com/ethereum/go-ethereum/common"
+	"math/big"
+   import_contracts "./contracts"
+)
+
+//the following parameters are got as command line arguments
+var buffer_size int
+var noOfFileChunks int
+var keyLength int
+
+const waitingTime=60  //max time to complete a stage
+const hashFunctionOutputBitSize=32 //hash function's output size(32 bytes in this case)
+
+var contractAddress []common.Address
+
+type SenderToReceiverStruct struct {
+		EncryptedFileChunks [][]byte
+}
+
+type SenderToContractStruct struct{
+	Price big.Int
+	HashedFileChunks [][hashFunctionOutputBitSize]byte
+	HashedEncryptedFileChunks [][hashFunctionOutputBitSize]byte
+}
+
+func main(){
+
+
+		var noOfPairsOfBuyersAndSellers int
+		var logFilePath string
+	 	if(len(os.Args)<6){
+			buffer_size=32
+			noOfFileChunks=8
+			keyLength=buffer_size
+			logFilePath="./text5.log"
+			noOfPairsOfBuyersAndSellers=1
+		}else{
+			var err error
+			buffer_size, err = strconv.Atoi(os.Args[1])
+			if(err!=nil){
+				log.Fatal(err)
+			}
+			noOfFileChunks, err = strconv.Atoi(os.Args[2])
+			if(err!=nil){
+				log.Fatal(err)
+			}
+			noOfPairsOfBuyersAndSellers,err=strconv.Atoi(os.Args[3])
+			if(err!=nil){
+				log.Fatal(err)
+			}
+			logFilePath=os.Args[4]
+			keyLength=buffer_size
+		}
+
+		f, err := os.OpenFile(logFilePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+				log.Fatalf("error opening file: %v", err)
+		}
+		defer f.Close()
+		wrt := io.MultiWriter(os.Stdout, f)
+		log.SetOutput(wrt)
+
+
+		contractAddress=make([]common.Address,noOfPairsOfBuyersAndSellers)
+
+		alloc := make(core.GenesisAlloc)
+
+		authSenders:=make([]*bind.TransactOpts,noOfPairsOfBuyersAndSellers)
+		authReceivers:=make([]*bind.TransactOpts,noOfPairsOfBuyersAndSellers)
+		//log.Println("\n->Sender\nSender Address :",senderAddress)
+
+		for i:=0;i<noOfPairsOfBuyersAndSellers;i++{
+			authSenders[i],_ = AuthAndAddressGeneration()
+			authReceivers[i],_= AuthAndAddressGeneration()
+			alloc[authSenders[i].From] = core.GenesisAccount{Balance: big.NewInt(11000000000000000)}  //1.1 ether
+			alloc[authReceivers[i].From] = core.GenesisAccount{Balance: big.NewInt(250000000000000000)} //2.5 ether
+		}
+
+		//client
+		client := backends.NewSimulatedBackend(alloc,600000000000000000)
+
+		//go routines
+
+		var wg sync.WaitGroup
+		wg.Add(2*noOfPairsOfBuyersAndSellers)
+		for i:=0;i<noOfPairsOfBuyersAndSellers;i++{
+			pairIndex:=i
+			channel_SenToRec:=make(chan []byte)
+			go Sender(authSenders[i],client,channel_SenToRec,&wg,pairIndex)
+			go Receiver(authReceivers[i],client,channel_SenToRec,&wg,pairIndex)
+		}
+
+		wg.Wait()  //Wait blocks until the WaitGroup counter is zero
+
+}
+
+
+
+//Sender function
+//The functoin executes honest sender's role in fairswap
+func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,channel_SenToRec chan []byte,wg *sync.WaitGroup,pairIndex int){
+
+	/*Computing all the variables in sender to receiever structure and sender to contract structure*/
+	/**//*computing variables time starts*/
+	sender_round1_computingTime_calculatingVariables_start := time.Now()
+		//reading from a file "a.txt" and storing bytearray of 32 bytes in FileChunks of size equal to noOfFileChunks
+	inputTextFilePath:=os.Args[5]
+	FileChunks:=FileRead(inputTextFilePath)
+
+	//objects
+	var SenToConObject SenderToContractStruct
+	var SenToRecObject SenderToReceiverStruct
+
+	setPrice(&SenToConObject)
+	key:=keyGenerate()
+	HashedFileChunks:=HashChunks(FileChunks)
+	for i:=0;i<noOfFileChunks;i++{
+		SenToConObject.HashedFileChunks=append(SenToConObject.HashedFileChunks,HashedFileChunks[i])
+	}
+
+ 	encryptedFileChunks := EncryptFileChunks(FileChunks,key)
+	HashedEncryptedFileChunks:=HashChunks(encryptedFileChunks)
+
+	for i:=0;i<noOfFileChunks;i++{
+		SenToConObject.HashedEncryptedFileChunks=append(SenToConObject.HashedEncryptedFileChunks,HashedEncryptedFileChunks[i])
+	}
+
+	sender_round1_computingTime_calculatingVariables_stop:=time.Now()
+	/**//*computing variables time ends*/
+	log.SetPrefix("\nNaive Protocol - Time ")
+	log.Printf("sender_round1_computingTime_calculatingVariables_time : %v \n", sender_round1_computingTime_calculatingVariables_stop.Sub(sender_round1_computingTime_calculatingVariables_start))
+
+
+
+
+
+	/*Deploy contract*/
+	var err error
+	var tx *types.Transaction
+	/**//*commit time for contract deployment starts*/
+	sender_round1_commitTime_deployingContract_start := time.Now()
+	contractAddress[pairIndex],tx,_, err=import_contracts.DeployProtocol2(
+		authSender,
+		client,
+		&SenToConObject.Price,
+		SenToConObject.HashedFileChunks,
+		SenToConObject.HashedEncryptedFileChunks,
+	)
+	if err!=nil{
+		log.Fatal(err)
+	}
+	client.Commit()
+	sender_round1_commitTime_deployingContract_stop := time.Now()
+	/**//*commit time for contract deployment ends*/
+	log.SetPrefix("\nNaive Protocol - Time ")
+	log.Printf("sender_round1_commitTime_deployingContract_time : %v \n", sender_round1_commitTime_deployingContract_stop.Sub(sender_round1_commitTime_deployingContract_start))
+	log.SetPrefix("\nNaive Protocol - Gas Cost ")
+	log.Println("Sender Round 1 : ",tx.Gas())
+
+
+
+
+	/*send encrypted file chunks to receiver as a byte array*/
+	/**//*sender sending byte array to receiver time starts*/
+	sender_round1_communicationTime_sendingEncryptedGateOutputs_start := time.Now()
+	SenToRecObject.EncryptedFileChunks=encryptedFileChunks
+
+	byteArrayFromSenToRec,err := json.Marshal(SenToRecObject)
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+	channel_SenToRec<-byteArrayFromSenToRec
+
+	sender_round1_communicationTime_sendingEncryptedGateOutputs_stop := time.Now()
+	/**//*sender sending byte array to receiver time ends*/
+	log.SetPrefix("\nNaive Protocol - Time ")
+	log.Printf("sender_round1_communicationTime_sendingEncryptedGateOutputs_time : %v \n", sender_round1_communicationTime_sendingEncryptedGateOutputs_stop.Sub(sender_round1_communicationTime_sendingEncryptedGateOutputs_start))
+
+
+
+
+	/*Sender waiting until the receiver accepts*/
+	/**//*Sender wait time for receiver to accept starts*/
+	sender_round2_waitingTime_forReceiverToAccept_start := time.Now()
+
+	//creating a contract instance
+	instance,err:= import_contracts.NewProtocol2(contractAddress[pairIndex],client)
+	if err != nil {
+			log.Fatal(err)
+	}
+
+	//waiting for the receiver to accept
+	//Sender calls the contract state variable Phase after every 1 second to know the status of the acceptance.
+	//If true, receiverAcceptedStatus is set as true, loop breaks and proceeded further
+	//If receiverAcceptedStatus is false after the timeout period, the sender has not accepted and the protocol stops.
+
+	receiverAcceptedStatus:=false
+	for i:=0;i<waitingTime;i++ {
+
+		Phase,err:=instance.Phase(nil)
+		if err!=nil{
+			log.Fatal(err)
+		}
+		if(Phase==2){
+			receiverAcceptedStatus=true
+			break;
+		}
+		time.Sleep(time.Second *1)
+	}
+
+	sender_round2_waitingTime_forReceiverToAccept_stop := time.Now()
+	/**//*Sender wait time for receiver to accept ends*/
+	log.SetPrefix("\nNaive Protocol - Time ")
+	log.Printf("sender_round2_waitingTime_forReceiverToAccept_time : %v \n", sender_round2_waitingTime_forReceiverToAccept_stop.Sub(sender_round2_waitingTime_forReceiverToAccept_start))
+
+
+
+
+
+	if(!receiverAcceptedStatus){
+		//Receiver has not accepted within time
+			}else{
+
+							/*Sender Reveals the key after the receiver has accepted within the time limit*/
+							/**//*Key reveal commit time starts*/
+							sender_round3_commitTime_revealKey_start := time.Now()
+							var keyToCon []byte
+							for i:=0;i<keyLength;i++{
+								keyToCon=append(keyToCon,key[i])
+							}
+
+							//key reveal functon called
+							tx,err=instance.KeyReveal(&bind.TransactOpts{
+									From:authSender.From,
+									Signer:authSender.Signer,
+									Value: nil,
+							},keyToCon)
+							if err!=nil{
+								log.Fatal(err)
+							}
+							client.Commit()
+
+							sender_round3_commitTime_revealKey_stop := time.Now()
+							/**//*Key reveal commit time ends*/
+							log.SetPrefix("\nNaive Protocol - Time ")
+							log.Printf("sender_round3_commitTime_revealKey_time : %v \n", sender_round3_commitTime_revealKey_stop.Sub(sender_round3_commitTime_revealKey_start))
+							log.SetPrefix("\nNaive Protocol - Gas Cost ")
+							log.Println("Sender Round 3 : ",tx.Gas())
+
+
+
+							//Waiting for receiver to give complain or a confirmation that he has received the correct file.
+							//If Receiver gives a confirmation, then the phase goes to finished in the contract.The loop
+							//breaks and the protocol from the sender side is finished.
+							//If receiver doesnt give confirmation or gives a complain, then the phase is till in the 'keyRevealed' after the deadline,
+							//then the receiver then calls the SenderGetEther function to get the ether.
+							sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_start:=time.Now()
+
+									for i:=0;i<waitingTime;i++{
+											Phase,err:=instance.Phase(nil)
+											if err!=nil{
+												log.Fatal(err)
+											}
+											if(Phase==4){
+												break
+											}
+											time.Sleep(time.Second *1)
+									}
+
+									sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_stop:=time.Now()
+									log.SetPrefix("\nNaive Protocol - Time ")
+									log.Printf("sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_time : %v \n", sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_stop.Sub(sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_start))
+
+									//Phase
+									Phase,err:=instance.Phase(nil)
+									if err!=nil{
+										log.Fatal(err)
+									}
+
+									if(Phase==3){
+
+										 //sender getting the ether since the receiver has not finished the protocol
+										 //The following loop is to check whether the current blockchain time has exceeded the deadline time set for receiver to produce a
+										 //complain or give a confirmation.
+										 timeout,err:=instance.Timeout(nil)
+										 if err!=nil{
+													 log.Fatal(err)
+										 }
+
+										 for{
+
+											  _,err:=instance.Nowy(&bind.TransactOpts{
+								 					From:authSender.From,
+								 					Signer:authSender.Signer,
+								 				})
+												if err!=nil{
+															log.Fatal(err)
+												}
+												client.Commit()
+												Now,err:=instance.Now(nil)
+												if err!=nil{
+															log.Fatal(err)
+												}
+												if(Now.Cmp(timeout)==1){
+							 					 break
+							 				 	}
+												time.Sleep(time.Second*1)
+										 }
+
+
+										//senderGetEther function is being after the receiver walked away from the protocol after key is revealed.
+										/**//*Sender commit time for Get ether function call to be mined starts*/
+										sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_start:=time.Now()
+										tx,err=instance.SenderGetEther(&bind.TransactOpts{
+												From:authSender.From,
+												Signer:authSender.Signer,
+											})
+										if err!=nil{
+													log.Fatal(err)
+										}
+										client.Commit()
+
+										log.SetPrefix("\nNaive Protocol - Gas Cost ")
+										log.Println("Sender Round 4 ",tx.Gas())
+										sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_stop:=time.Now()
+										/**//*Sender commit time for Get ether function call to be mined ends*/
+										log.SetPrefix("\nNaive Protocol - Time ")
+										log.Printf("sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_time : %v \n", sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_stop.Sub(sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_start))
+							}
+				}
+	wg.Done()
+}
+
+
+//Receiver function
+//The functoin executes honest receiver's role in fairswap
+func Receiver(authReceiver *bind.TransactOpts,client *backends.SimulatedBackend,channel_SenToRec chan []byte,wg *sync.WaitGroup,pairIndex int){
+
+
+		//Initially the receiver waits for sender to send encrypted file chunks
+		/**//*Waiting time for receiver to get the encrypted file chunks starts*/
+		receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_start := time.Now()
+
+		//getting the encoded filechunks array from sender
+		byteArrayFromSenToRec:=<-channel_SenToRec
+
+		receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_stop := time.Now()
+		/**//*Waiting time for receiver to get the encrypted file chunks ends*/
+		log.SetPrefix("\nNaive Protocol - Time ")
+		log.Printf("receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : %v \n", receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_stop.Sub(receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_start))
+
+
+
+		//the receiver does the following things before accepting
+		//1. Unmarshals the encrypted file byte arrray got from sender
+		//2. Gets the hashes of encrypted file chunks put in the contract by the sender
+		//3. Compares the Hashes of encrypted file got from the contract with those of hashes calculated from the encrypted file chunks got from the sender.
+		/**//*the time for receiver to do all these 3 procedure starts*/
+		receiver_round1_computingTime_merkleRootCheck_start := time.Now()
+
+		var Receiver_SenToRecObj SenderToReceiverStruct
+
+		//1.Unmarshalling
+		err:=json.Unmarshal(byteArrayFromSenToRec, &Receiver_SenToRecObj)
+		if err != nil {
+				log.Fatal(err)
+		}
+
+		instance,err := import_contracts.NewProtocol2(contractAddress[pairIndex],client)
+		if err != nil {
+				log.Fatal(err)
+		}
+
+		//get the number of filechunks from the contract
+	 _contractNoOfFileChunks,err := instance.NoOfFileChunks(nil)
+	 if err!=nil{
+		 log.Fatal(err)
+	 }
+
+	 boolHashedEncryptedFileCheck:=true
+	 //3.Comparision
+	 //Conditions checked :
+	 //a) whether the number of hashed encrypted files chunks given to the contract matches with the number of encrypted file chunks got from sender
+	 //b) Whether the hash of encrypted file chunk got from sender matches with the hash of encrypted file chunk given to the contract
+	 //if both these conditions satisfy then the protocol is proceeded further else discarded by the receiver
+	 if(_contractNoOfFileChunks.Cmp(big.NewInt(int64(len(Receiver_SenToRecObj.EncryptedFileChunks))))==0){
+		var i int64
+		for i=0;i<int64(noOfFileChunks);i++ {
+			//2.Get Hashes of encrypted file from contract
+			value,err:=instance.HashedEncryptedFileChunks(nil,big.NewInt(i))
+			if err!=nil{
+				log.Fatal(err)
+			}
+			if(value!=Hash(Receiver_SenToRecObj.EncryptedFileChunks[i])){
+				boolHashedEncryptedFileCheck=false
+			}
+		}
+	}else{
+		boolHashedEncryptedFileCheck=false
+	}
+
+	receiver_round1_computingTime_merkleRootCheck_stop := time.Now()
+	/**//*the time for receiver to do all these 3 procedure ends*/
+	log.SetPrefix("\nNaive Protocol - Time ")
+	log.Printf("receiver_round1_computingTime_merkleRootCheck_time : %v \n", receiver_round1_computingTime_merkleRootCheck_stop.Sub(receiver_round1_computingTime_merkleRootCheck_start))
+
+
+
+
+
+	//Proceeds further if the comparison is positive
+	if(boolHashedEncryptedFileCheck){
+
+
+
+			//the receiver accepts
+			/**//*Commit time for receiver to accept starts*/
+			receiver_round2_commitTime_Accept_start := time.Now()
+
+			value:=big.NewInt(100)
+
+				tx,err:=instance.Accept(&bind.TransactOpts{
+				From:authReceiver.From,
+				Signer:authReceiver.Signer,
+				Value:value,
+			})
+			if err != nil {
+					log.Fatal(err)
+			}
+			client.Commit()
+
+			receiver_round2_commitTime_Accept_stop := time.Now()
+			/**//*Commit time for receiver to accept ends*/
+			log.SetPrefix("\nNaive Protocol - Time ")
+			log.Printf("receiver_round2_commitTime_Accept_time : %v \n", receiver_round2_commitTime_Accept_stop.Sub(receiver_round2_commitTime_Accept_start))
+			log.SetPrefix("\nNaive Protocol - Gas Cost ")
+			log.Println("Receiver Round 2 : ",tx.Gas())
+
+
+
+
+			//waiting for the sender to reveal the key
+			//If the sender reveals the key within the deadline the loop breaks and proceeded further for the extraction.
+			//If the sender doesn't reveal the key within the deadline, receiver will call the ReceiverGetEther function to get the ether.
+			/**//* the sender waiting time for sender to reveal the key starts*/
+			receiver_round3_waitingTime_forSenderToRevealKey_start := time.Now()
+			senderKeyRevealedStatus:=false
+			var contract_Key []byte
+			for i:=0;i<waitingTime;i++ {
+
+				Phase,err:=instance.Phase(nil)
+				if err!=nil{
+					log.Fatal(err)
+				}
+				if(Phase==3){
+					contract_Key,err=instance.Key(nil)
+					if err!=nil{
+						log.Fatal(err)
+					}
+					senderKeyRevealedStatus=true
+					break;
+				}
+				time.Sleep(time.Second *1)
+			}
+			receiver_round3_waitingTime_forSenderToRevealKey_stop := time.Now()
+			/**//* the sender waiting time for sender to reveal the key ends*/
+			log.SetPrefix("\nNaive Protocol - Time ")
+			log.Printf("receiver_round3_waitingTime_forSenderToRevealKey_time : %v \n", receiver_round3_waitingTime_forSenderToRevealKey_stop.Sub(receiver_round3_waitingTime_forSenderToRevealKey_start))
+
+
+
+			if(!senderKeyRevealedStatus){
+
+
+
+					 //sender has not revealed the wrong key
+					 timeout,err:=instance.Timeout(nil)
+		 			 if err!=nil{
+		 						 log.Fatal(err)
+		 			 }
+
+		 			 for{
+
+		 				  _,err:=instance.Nowy(&bind.TransactOpts{
+		 	 					From:authReceiver.From,
+		 	 					Signer:authReceiver.Signer,
+		 	 				})
+		 					if err!=nil{
+		 								log.Fatal(err)
+		 					}
+		 					client.Commit()
+		 					Now,err:=instance.Now(nil)
+		 					if err!=nil{
+		 								log.Fatal(err)
+		 					}
+		 					if(Now.Cmp(timeout)==1){
+		  					 break
+		  				 	}
+		 					time.Sleep(time.Second*1)
+		 			 }
+
+					 // receiverGetEther function being called
+					 /**//*the commit time for receiverGetEther function call starts*/
+					 	receiver_round3_commitTime_senderKeyNotRevealedGettingEther_start := time.Now()
+						tx,err=instance.ReceiverGetEther(&bind.TransactOpts{
+								From:authReceiver.From,
+								Signer:authReceiver.Signer,
+								Value: nil,
+							})
+						if err!=nil{
+									log.Fatal(err)
+						}
+						client.Commit()
+						receiver_round3_commitTime_senderKeyNotRevealedGettingEther_stop := time.Now()
+						/**//*the commit time for receiverGetEther function call ends*/
+						log.SetPrefix("\nNaive Protocol - Gas Cost ")
+						log.Println("Receiver Round 3 (Sender Not Revealed Key) : ",tx.Cost())
+						log.SetPrefix("\nNaive Protocol - Time ")
+						log.Printf("receiver_round3_commitTime_senderKeyNotRevealedGettingEther_time : %v \n", receiver_round3_commitTime_senderKeyNotRevealedGettingEther_stop.Sub(receiver_round3_commitTime_senderKeyNotRevealedGettingEther_start))
+
+
+
+
+			} else{
+
+						//Extraction
+						//1. The receiver gets the hashes of file chunks from the contract
+						//2. Extraction function is called : The function basically decrypts the encrypted file chunks got from the sender hashes it and then compares
+						// with the hash of file chunks got from the contract. If there is some discrepancy then the index of that gate is returned by the function.
+						//Then a complain is given.
+						//If the comparision is positive, then the receiver can either give a confirmation that he received the correct file or else walk away.
+						//In our implemenation doesn't give this confirmation
+						/**//*to calculate the time required for receiver to perfoem the extraction function starts*/
+						receiver_round4_computingTime_extraction_start := time.Now()
+
+						 _contractHashedFileChunks:=make([][hashFunctionOutputBitSize]byte,noOfFileChunks)
+						var i int64
+						for i=0;i<int64(noOfFileChunks);i++{
+								value,err:=instance.HashedFileChunks(nil,big.NewInt(i))
+								if err!=nil{
+										log.Fatal(err)
+								}
+								_contractHashedFileChunks[i]=value
+						}
+
+						_ReceiverKey:=make([]byte,keyLength)
+						for i:=0;i<keyLength;i++{
+							_ReceiverKey[i]=contract_Key[i]
+						}
+
+						isComplain,index:=Extract(_contractHashedFileChunks,Receiver_SenToRecObj.EncryptedFileChunks,_ReceiverKey)
+						receiver_round4_computingTime_extraction_stop := time.Now()
+						/**//*to calculate the time required for receiver to perfoem the extraction function ends*/
+						log.SetPrefix("\nNaive Protocol - Time ")
+						log.Printf("receiver_round4_computingTime_extraction_time : %v \n", receiver_round4_computingTime_extraction_stop.Sub(receiver_round4_computingTime_extraction_start))
+
+						//index nil denotes no complain
+						if(!isComplain){
+							log.SetPrefix("\nNaive Protocol - Gas Cost ")
+								log.Println("Receiver Round 4 : ",0)
+						} else{
+
+								//complain function being called
+								/**//*commit time for receiver to produce the complaint starts*/
+								receiver_round4_commitTime_complain_start := time.Now()
+								var complaintChunk []byte
+								for i:=0;i<buffer_size;i++{
+									  complaintChunk=append(complaintChunk,Receiver_SenToRecObj.EncryptedFileChunks[index][i])
+								}
+
+								tx,err=instance.Complain(&bind.TransactOpts{
+									From:authReceiver.From,
+									Signer:authReceiver.Signer,
+								},complaintChunk,big.NewInt(int64(index)))
+								if err!=nil{
+									log.Fatal(err)
+								}
+								client.Commit()
+
+								receiver_round4_commitTime_complain_stop := time.Now()
+								/**//*commit time for receiver to produce the complaint ends*/
+								log.SetPrefix("\nNaive Protocol - Time ")
+								log.Printf("receiver_round4_commitTime_complain_time : %v \n", receiver_round4_commitTime_complain_stop.Sub(receiver_round4_commitTime_complain_start))
+								log.SetPrefix("\nNaive Protocol - Gas Cost ")
+								log.Println("Receiver Round 4 : ",tx.Cost())
+
+				}
+			}
+		}	else{
+				// log.Println("\n->Receiver\n Hash encrypted file from the contract and the hash of encrypted file from the contract doesnt match")
+		}
+	wg.Done()
+}
+
+
+func FileRead(filePath string) ([][]byte){
+	var currentByte int64 = 0
+	fileBuffer := make([]byte, buffer_size)
+	FileChunks := make([][]byte, noOfFileChunks)
+	file, err := os.Open(filePath)
+	if err != nil {
+			log.Fatal(err)
+	}
+	count:=0
+	for {
+			n,err := file.ReadAt(fileBuffer, currentByte)
+			if err!=nil{
+				fmt.Println(err)
+			}
+			currentByte += int64(buffer_size)
+			fileBuffer=fileBuffer[:n]
+			if count==noOfFileChunks{
+					break
+			}
+			FileChunks[count] = make([]byte, buffer_size)
+			copy(FileChunks[count],fileBuffer)
+			if err == io.EOF {
+					log.Fatal(err)
+			}
+			count++
+	}
+	file.Close()
+	return FileChunks
+}
+
+
+//generating a  computing party in the blockchain
+func AuthAndAddressGeneration() (*bind.TransactOpts,common.Address){
+
+	privateKey,err:=crypto.GenerateKey()
+  if err!=nil{
+    log.Fatal(err)
+  }
+  auth:=bind.NewKeyedTransactor(privateKey)
+
+  publicKey := privateKey.Public()
+  publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+  if !ok {
+      log.Fatal("error casting public key to ECDSA")
+  }
+  address := crypto.PubkeyToAddress(*publicKeyECDSA)
+  return auth,address
+}
+
+
+func Hash(_toBeHashed []byte) ([hashFunctionOutputBitSize]byte){
+
+	var toBeHashed []byte
+	var Hashed [hashFunctionOutputBitSize]byte
+
+	for j:=0;j<len(_toBeHashed);j++{
+		toBeHashed=append(toBeHashed,_toBeHashed[j])
+	}
+
+	HashedAfter:=kec.Keccak256(toBeHashed)
+
+	for j:=0;j<hashFunctionOutputBitSize;j++{
+			Hashed[j]=HashedAfter[j]
+	}
+
+	return Hashed
+}
+
+func keyGenerate() ([]byte){
+
+		keyGen := make([]byte, keyLength)
+		key:=make([]byte,keyLength)
+
+		//Here
+	  _, err := rand.Read(keyGen)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+
+		for i:=0;i<keyLength;i++{
+			key[i]=keyGen[i]
+		}
+		return key
+}
+
+
+
+func Encrypt(plainText []byte,key []byte) ([]byte) {
+
+			encryptedtext:=make([]byte,buffer_size)
+			for i:=0;i<buffer_size;i++{
+				encryptedtext[i]=key[i]^plainText[i]  //xor operation
+			}
+			return encryptedtext
+}
+
+func setPrice(object *SenderToContractStruct){
+	object.Price=*big.NewInt(80)     //80 wei
+}
+
+func Decrypt(encryptedtext []byte,key []byte) ([]byte){
+
+			plainText:=make([]byte,buffer_size)
+			for i:=0;i<buffer_size;i++{
+				plainText[i]=key[i]^encryptedtext[i]
+			}
+
+			return plainText
+}
+
+func Extract(_hashedFileChunks [][hashFunctionOutputBitSize]byte, _encryptedFileChunks [][]byte, key []byte)  (bool,int){
+
+		for i:=0;i<noOfFileChunks;i++{
+			if(_hashedFileChunks[i]!=Hash(Decrypt(_encryptedFileChunks[i],key))){
+				return true,i
+			}
+		}
+		return false,0
+}
+
+func HashChunks(_tobeHashedArray [][]byte) ([][hashFunctionOutputBitSize]byte){
+
+		hashedArray:=make([][hashFunctionOutputBitSize]byte,noOfFileChunks)
+		for i:=0;i<noOfFileChunks;i++{
+			hashedArray[i]=Hash(_tobeHashedArray[i])
+		}
+		return hashedArray
+}
+
+
+func EncryptFileChunks(_fileChunks [][]byte,key []byte) ([][]byte){
+
+	encryptedFileChunks:=make([][]byte,noOfFileChunks)
+	for i:=0;i<noOfFileChunks;i++{
+		encryptedFileChunks[i]=Encrypt(_fileChunks[i],key)
+	}
+	return encryptedFileChunks
+}
+
+
+ func createMaliciousHashIndexExchangeFileChunk(HashedEncryptedFileChunks [][hashFunctionOutputBitSize]byte) ([][hashFunctionOutputBitSize]byte){
+
+	maliciousHashIndexExchangeFileChunks:=make([][hashFunctionOutputBitSize]byte,noOfFileChunks)
+	for i:=0;i<noOfFileChunks;i++{
+			maliciousHashIndexExchangeFileChunks[i]=HashedEncryptedFileChunks[i]
+	}
+	maliciousHashIndexExchangeFileChunks[0]=HashedEncryptedFileChunks[2]
+	maliciousHashIndexExchangeFileChunks[2]=HashedEncryptedFileChunks[0]
+
+	return maliciousHashIndexExchangeFileChunks
+}
+
+
+func MaliciousEncryptedFileChunks(_fileChunks [][]byte,key []byte,maliciouskey []byte) ([][]byte){
+
+	maliciousEncryptedFileChunks:=make([][]byte,noOfFileChunks)
+	for i:=0;i<noOfFileChunks;i++{
+		maliciousEncryptedFileChunks[i]=Encrypt(_fileChunks[i],key)
+	}
+	maliciousEncryptedFileChunks[5]=Encrypt(_fileChunks[5],maliciouskey)
+	return maliciousEncryptedFileChunks
+}

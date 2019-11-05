@@ -27,7 +27,7 @@ contract fairswap{
 	//fn used to move to the next stage fron the current stage
 	function nextStage() public{
 		phase=stage(uint(phase)+1);
-		timeout=now+ 20 seconds;
+		timeout=now+ 40 seconds;
 	}
 
 	function Nowy() public {
@@ -91,7 +91,7 @@ function accept() allowedBefore(msg.sender,stage.initialized) payable public {
 //If the sender reveals the right key then the contract stage goes from accepted to keyRevealed
 //If the sender reveals the wrong key, then the ether is transferred to the receiver and the stage
 //goes from accepted to finalized
-function revealKey (bytes32  _key) allowedBefore(senderAddress,stage.active) public
+function revealKey (bytes32 _key) allowedBefore(senderAddress,stage.active) public
 {
 	bytes32 Hashed;
 	bytes memory toBeHashed;

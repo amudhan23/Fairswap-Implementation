@@ -31,7 +31,7 @@ var buffer_size int
 var noOfFileChunks int
 var keyLength int
 
-const waitingTime=20  //max time to complete a stage
+const waitingTime=60  //max time to complete a stage
 const hashFunctionOutputBitSize=32 //hash function's output size(32 bytes in this case)
 
 var contractAddress []common.Address

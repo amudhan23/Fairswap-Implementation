@@ -1,1 +1,0 @@
-32 8 0 3 /home/amudhan/shell/workspace10/node1/keystore /home/amudhan/shell/workspace10/node2/keystore /home/amudhan/shell/workspace10/node1/geth.ipc /home/amudhan/shell/workspace10/node2/geth.ipc "text6.log"

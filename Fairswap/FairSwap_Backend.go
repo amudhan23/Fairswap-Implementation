@@ -7,7 +7,6 @@ import(
 	"io"
 	"log"
 	"reflect"
-	"context"
 	"time"
 	"encoding/json"
 	"sync"
@@ -29,15 +28,21 @@ import(
 
 )
 
-var buffer_size int
-var noOfInputGates int
-var totalNumberOfGates int
+//the following parameters are got as command line arguments
+// var buffer_size int
+// var noOfFileChunks int
 
-const maxLinesToGate=2
-const keyLength=32
-const hashFunctionOutputBitSize=32
+
+const waitingTime=40  //max time to complete a stage
+const hashFunctionOutputBitSize=32 //hash function's output size(32 bytes in this case)
 const gateTupleSize=32
-const waitingTime=10
+const keySize=32
+const maxLinesToGate=2
+
+var totalNumberOfGates int
+var noOfInputGates int
+var buffer_size int
+var noOfFileChunks int
 
 var contractAddress []common.Address
 
@@ -56,68 +61,87 @@ type SenderToContractStruct struct{
 
 func main(){
 
-		channel_SenToRec:=make(chan []byte)
-
-		//logging file
-		f, err := os.OpenFile("text1.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-		if err != nil {
-		    log.Fatalf("error opening file: %v", err)
+	var noOfPairsOfBuyersAndSellers int
+	var logFilePath string
+	logFilePath="/home/amudhan/protocols/Fairswap/text6.log"
+	if(len(os.Args)<6){
+		buffer_size=32
+		noOfFileChunks=8
+		noOfInputGates=noOfFileChunks
+		totalNumberOfGates=noOfInputGates*2
+		logFilePath="./text5.log"
+		noOfPairsOfBuyersAndSellers=1
+	}else{
+		var err error
+		buffer_size, err = strconv.Atoi(os.Args[1])
+		if(err!=nil){
+			log.Fatal(err)
 		}
-		defer f.Close()
-		wrt := io.MultiWriter(os.Stdout, f)
-		log.SetOutput(wrt)
-
-		// fmt.Println(os.Args)
-	 	if(len(os.Args)<2){
-			buffer_size=32
-			noOfInputGates=8
-			totalNumberOfGates=2*noOfInputGates
-		}else{
-			var err error
-			buffer_size, err = strconv.Atoi(os.Args[1])
-			if(err!=nil){
-				log.Fatal(err)
-			}
-			noOfInputGates, err = strconv.Atoi(os.Args[2])
-			if(err!=nil){
-				log.Fatal(err)
-			}
-			totalNumberOfGates=2*noOfInputGates
+		noOfFileChunks, err = strconv.Atoi(os.Args[2])
+		if(err!=nil){
+			log.Fatal(err)
 		}
-
-		contractAddress=make([]common.Address,2)
-
-		alloc := make(core.GenesisAlloc)
-
-		authSenders:=make([]*bind.TransactOpts,2)
-		authReceivers:=maek([]*bind.TransactOpts,2)
-		//log.Println("\n->Sender\nSender Address :",senderAddress)
-
-		for i:=0;i<2;i++{
-			alloc[authSender[i].From] = core.GenesisAccount{Balance: big.NewInt(11000000000000000)}  //1.1 ether
-			alloc[authReceiver[i].From] = core.GenesisAccount{Balance: big.NewInt(250000000000000000)} //2.5 ether
+		noOfPairsOfBuyersAndSellers,err=strconv.Atoi(os.Args[3])
+		if(err!=nil){
+			log.Fatal(err)
 		}
-		//client
-		client := backends.NewSimulatedBackend(alloc,60000000000)
+		noOfInputGates=noOfFileChunks
+		totalNumberOfGates=noOfInputGates*2
+		logFilePath=os.Args[4]
+	}
 
-		//go routines
-		ctx := context.Background()
-		var wg sync.WaitGroup
-		wg.Add(2)
-		//go routines
-		go Sender(ctx,authSender,client,channel_SenToRec,&wg,pairIndex)
-		go Receiver(ctx,authReceiver,client,channel_SenToRec,&wg,pairIndex)
+	f, err := os.OpenFile(logFilePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+			fmt.Println("error opening file: %v", err)
+	}
+	defer f.Close()
+	wrt := io.MultiWriter(os.Stdout, f)
+	log.SetOutput(wrt)
 
-		wg.Wait()
 
+	contractAddress=make([]common.Address,noOfPairsOfBuyersAndSellers)
+
+	alloc := make(core.GenesisAlloc)
+
+	authSenders:=make([]*bind.TransactOpts,noOfPairsOfBuyersAndSellers)
+	authReceivers:=make([]*bind.TransactOpts,noOfPairsOfBuyersAndSellers)
+	//log.Println("\n->Sender\nSender Address :",senderAddress)
+
+	for i:=0;i<noOfPairsOfBuyersAndSellers;i++{
+		authSenders[i],_ = AuthAndAddressGeneration()
+		authReceivers[i],_= AuthAndAddressGeneration()
+		alloc[authSenders[i].From] = core.GenesisAccount{Balance: big.NewInt(11000000000000000)}  //1.1 ether
+		alloc[authReceivers[i].From] = core.GenesisAccount{Balance: big.NewInt(250000000000000000)} //2.5 ether
+	}
+
+	//client
+	client := backends.NewSimulatedBackend(alloc,600000000000000000)
+
+	//go routines
+
+	channel_SenToRec:=make([]chan []byte,noOfPairsOfBuyersAndSellers)
+		for i := range channel_SenToRec {
+	 		channel_SenToRec[i] = make(chan []byte)
+	 }
+
+	var wg sync.WaitGroup
+	wg.Add(2*noOfPairsOfBuyersAndSellers)
+	for i:=0;i<noOfPairsOfBuyersAndSellers;i++{
+		pairIndex:=i
+		go Sender(authSenders[i],client,channel_SenToRec[pairIndex],&wg,pairIndex)
+		go Receiver(authReceivers[i],client,channel_SenToRec[pairIndex],&wg,pairIndex)
+	}
+
+	wg.Wait()  //Wait blocks until the WaitGroup counter is zero
 }
 
 
-func Sender(ctx context.Context,authSender *bind.TransactOpts,client *backends.SimulatedBackend,channel_SenToRec chan []byte,wg *sync.WaitGroup,pairIndex int){
+func Sender(authSender *bind.TransactOpts,client *backends.SimulatedBackend,channel_SenToRec chan []byte,wg *sync.WaitGroup,pairIndex int){
 
 	sender_round1_computingTime_calculatingVariables_start := time.Now()
 
-	inputVectors:=FileRead()
+	inputTextFilePath:=os.Args[5]
+	inputVectors:=FileRead(inputTextFilePath)
 
 	var SenToConObject SenderToContractStruct
 	var SenToRecObject SenderToReceiverStruct
@@ -145,7 +169,7 @@ func Sender(ctx context.Context,authSender *bind.TransactOpts,client *backends.S
 	var err error
 	var tx *types.Transaction
 	sender_round1_commitTime_deployingContract_start := time.Now()
-  contractAddress,tx,_, err=import_contracts.DeployFairswap(
+  contractAddress[pairIndex],tx,_, err=import_contracts.DeployFairswap(
 		authSender,
 		client,
 		&SenToConObject.Price,
@@ -159,6 +183,12 @@ func Sender(ctx context.Context,authSender *bind.TransactOpts,client *backends.S
 		log.Fatal(err)
 	}
 	client.Commit()
+
+	instance,err:= import_contracts.NewFairswap(contractAddress[pairIndex],client)
+	if err != nil {
+			log.Fatal(err)
+	}
+
 
 	sender_round1_commitTime_deployingContract_stop := time.Now()
 	log.SetPrefix("\nFairswap - Time ")
@@ -187,10 +217,7 @@ func Sender(ctx context.Context,authSender *bind.TransactOpts,client *backends.S
 
 	sender_round2_waitingTime_forReceiverToAccept_start := time.Now()
 
-	instance,err:= import_contracts.NewFairswap(contractAddress,client)
-	if err != nil {
-			log.Fatal(err)
-	}
+
 
 	receiverAcceptedStatus:=false
 	for i:=0;i<waitingTime;i++ {
@@ -206,6 +233,7 @@ func Sender(ctx context.Context,authSender *bind.TransactOpts,client *backends.S
 		time.Sleep(time.Second *1)
 
 	}
+
 
 	sender_round2_waitingTime_forReceiverToAccept_stop := time.Now()
 	log.SetPrefix("\nFairswap - Time ")
@@ -310,8 +338,154 @@ func Sender(ctx context.Context,authSender *bind.TransactOpts,client *backends.S
 	wg.Done()
 }
 
+
+func maliciousSender_WrongKeyReveal(authSender *bind.TransactOpts,client *backends.SimulatedBackend,channel_SenToRec chan []byte,wg *sync.WaitGroup,pairIndex int){
+
+	sender_round1_computingTime_calculatingVariables_start := time.Now()
+
+	inputTextFilePath:=os.Args[5]
+	inputVectors:=FileRead(inputTextFilePath)
+
+	var SenToConObject SenderToContractStruct
+	var SenToRecObject SenderToReceiverStruct
+
+	gateTuples:=initializeCircuitTuples_asAnArray()
+	MRgateTuples:=createMerkleRootForGateTuples(gateTuples)
+	//maliciousGateTuples:=maliciousInitializeCircuitTuples_asAnArray()
+	key:=keyGenerate()
+	keyCommit:=fnKeycommit(key)
+	MRinp:=createMerkleRootForInputVectors(inputVectors)
+	encodedGateOutputs,_:=Encode(inputVectors,key,gateTuples,MRinp)
+	MRencout:=createMerkleRootForEncInp(encodedGateOutputs)
+
+	setPrice(&SenToConObject)
+	setTotalNumberOfGates(&SenToConObject)
+	setMaxLinesToAGate(&SenToConObject)
+	SenToConObject.Keycommit=keyCommit
+	SenToConObject.MerkleRootOfEncInp=MRencout
+	SenToConObject.MerkleRootOfCircuit=MRgateTuples
+
+	sender_round1_computingTime_calculatingVariables_stop:=time.Now()
+	log.SetPrefix("\nFairswap - Time ")
+	log.Printf("sender_round1_computingTime_calculatingVariables_time : %v \n", sender_round1_computingTime_calculatingVariables_stop.Sub(sender_round1_computingTime_calculatingVariables_start))
+
+	var err error
+	var tx *types.Transaction
+	sender_round1_commitTime_deployingContract_start := time.Now()
+  contractAddress[pairIndex],tx,_, err=import_contracts.DeployFairswap(
+		authSender,
+		client,
+		&SenToConObject.Price,
+		SenToConObject.Keycommit,
+		SenToConObject.MerkleRootOfEncInp,
+		SenToConObject.MerkleRootOfCircuit,
+		&SenToConObject.TotalNumberOfGates,
+		&SenToConObject.MaxInputLinesToAGate,
+	)
+	if err!=nil{
+		log.Fatal(err)
+	}
+	client.Commit()
+
+	instance,err:= import_contracts.NewFairswap(contractAddress[pairIndex],client)
+	if err != nil {
+			log.Fatal(err)
+	}
+
+	sender_round1_commitTime_deployingContract_stop := time.Now()
+	log.SetPrefix("\nFairswap - Time ")
+	log.Printf("sender_round1_commitTime_deployingContract_time : %v \n", sender_round1_commitTime_deployingContract_stop.Sub(sender_round1_commitTime_deployingContract_start))
+	log.SetPrefix("\nFairswap - Gas Cost ")
+	log.Println("Sender Round 1 : ",tx.Gas())
+
+	sender_round1_communicationTime_sendingEncryptedGateOutputs_start := time.Now()
+	SenToRecObject.EncryptedOutputOfGates=encodedGateOutputs
+
+	byteArrayFromSenToRec,err := json.Marshal(SenToRecObject)
+	if err != nil {
+		//log.Println("error:", err)
+	}
+
+	channel_SenToRec<-byteArrayFromSenToRec
+
+	sender_round1_communicationTime_sendingEncryptedGateOutputs_stop := time.Now()
+	log.SetPrefix("\nFairswap - Time ")
+	log.Printf("sender_round1_communicationTime_sendingEncryptedGateOutputs_time : %v \n", sender_round1_communicationTime_sendingEncryptedGateOutputs_stop.Sub(sender_round1_communicationTime_sendingEncryptedGateOutputs_start))
+
+
+	sender_round2_waitingTime_forReceiverToAccept_start := time.Now()
+
+
+
+	receiverAcceptedStatus:=false
+	for i:=0;i<waitingTime;i++ {
+
+		Phase,err:=instance.Phase(nil)
+		if err!=nil{
+			log.Fatal(err)
+		}
+		if(Phase==2){
+			receiverAcceptedStatus=true
+			break;
+		}
+		time.Sleep(time.Second *1)
+
+	}
+
+
+	sender_round2_waitingTime_forReceiverToAccept_stop := time.Now()
+	log.SetPrefix("\nFairswap - Time ")
+	log.Printf("sender_round2_waitingTime_forReceiverToAccept_time : %v \n", sender_round2_waitingTime_forReceiverToAccept_stop.Sub(sender_round2_waitingTime_forReceiverToAccept_start))
+
+
+	if(!receiverAcceptedStatus){
+			//Receiver has not accepted within time
+			}else{
+
+						malicious_key:=keyGenerate()
+						 sender_round3_commitTime_revealKey_start := time.Now()
+						 tx,err=instance.RevealKey(&bind.TransactOpts{
+									From:authSender.From,
+									Signer:authSender.Signer,
+									Value: nil,
+							},malicious_key)
+							if err!=nil{
+								log.Fatal(err)
+							}
+							client.Commit()
+							//log.Println("\n->Sender\nKeyRevealed")
+							sender_round3_commitTime_revealKey_stop := time.Now()
+							log.SetPrefix("\nFairswap - Time ")
+							log.Printf("sender_round3_commitTime_revealKey_time : %v \n", sender_round3_commitTime_revealKey_stop.Sub(sender_round3_commitTime_revealKey_start))
+							//client.Commit()
+							log.SetPrefix("\nFairswap - Gas Cost ")
+							log.Println("Sender Round 3 : ",tx.Gas())
+
+
+			sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_start:=time.Now()
+
+			for i:=0;i<waitingTime;i++{
+
+					Phase,err:=instance.Phase(nil)
+					if err!=nil{
+						log.Fatal(err)
+					}
+					if(Phase==4){
+						break
+					}
+					time.Sleep(time.Second *1)
+			}
+			sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_stop:=time.Now()
+			log.SetPrefix("\nFairswap - Time ")
+			log.Printf("sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_time : %v \n", sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_stop.Sub(sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_start))
+
+
+	}
+	wg.Done()
+}
+
 //channel_RecToMainRev(chan string) - to notify the main function for the completion of reveal phase
-func Receiver(ctx context.Context,authReceiver *bind.TransactOpts,client *backends.SimulatedBackend,channel_SenToRec chan []byte,wg *sync.WaitGroup){
+func Receiver(authReceiver *bind.TransactOpts,client *backends.SimulatedBackend,channel_SenToRec chan []byte,wg *sync.WaitGroup,pairIndex int){
 
 	receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_start := time.Now()
 	//log.Println("\n->Receiver\n Begins")
@@ -321,10 +495,8 @@ func Receiver(ctx context.Context,authReceiver *bind.TransactOpts,client *backen
 	log.SetPrefix("\nFairswap - Time ")
 	log.Printf("receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : %v \n", receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_stop.Sub(receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_start))
 
-
-	//log.Println("\n->Receiver\nByteArray got from sender")
-
 	receiver_round1_computingTime_merkleRootCheck_start := time.Now()
+
 
 	var Receiver_SenToRecObj SenderToReceiverStruct
 	err:=json.Unmarshal(byteArrayFromSenToRec, &Receiver_SenToRecObj)
@@ -332,7 +504,8 @@ func Receiver(ctx context.Context,authReceiver *bind.TransactOpts,client *backen
 			log.Fatal(err)
 	}
 
-	instance,err := import_contracts.NewFairswap(contractAddress,client)
+
+	instance,err:= import_contracts.NewFairswap(contractAddress[pairIndex],client)
 	if err != nil {
 			log.Fatal(err)
 	}
@@ -360,9 +533,11 @@ func Receiver(ctx context.Context,authReceiver *bind.TransactOpts,client *backen
 	//log.Println("\n->Receiver\nboolValueEncryptedGateOutput(comparision between merkleroot of encryptedGateOutputs from contract and calulated encryptedGateOutputs merkleroot): ",boolValueEncryptedGateOutput)
 	//log.Println("\n->Receiver\nboolValueEncryptedGateTuples(comparision between merkleroot of encryptedGateTuples from contract and calulated encryptedGateTuples merkleroot): ",boolValueEncryptedGateTuples)
 
+
+
 	if(boolValueEncryptedGateOutput && boolValueEncryptedGateTuples){
 
-		 value:=big.NewInt(80)
+		 value:=big.NewInt(100)
 
 		 receiver_round2_commitTime_Accept_start := time.Now()
 
@@ -370,12 +545,13 @@ func Receiver(ctx context.Context,authReceiver *bind.TransactOpts,client *backen
 				From:authReceiver.From,
 				Signer:authReceiver.Signer,
 				Value:value,
-			//	GasLimit:gasLimit,
 			})
 			if err != nil {
 					log.Fatal(err)
 			}
 			client.Commit()
+
+
 
 			receiver_round2_commitTime_Accept_stop := time.Now()
 			log.SetPrefix("\nFairswap - Time ")
@@ -398,7 +574,7 @@ func Receiver(ctx context.Context,authReceiver *bind.TransactOpts,client *backen
 		receiver_round3_waitingTime_forSenderToRevealKey_start := time.Now()
 			senderKeyRevealedStatus:=false
 			protocolFinishedStatus:=false
-			var contract_Key [keyLength]byte
+			var contract_Key [keySize]byte
 			for i:=0;i<waitingTime;i++ {
 				Phase,err:=instance.Phase(nil)
 				if err!=nil{
@@ -424,6 +600,9 @@ func Receiver(ctx context.Context,authReceiver *bind.TransactOpts,client *backen
 			log.SetPrefix("\nFairswap - Time ")
 			log.Printf("receiver_round3_waitingTime_forSenderToRevealKey_time : %v \n", receiver_round3_waitingTime_forSenderToRevealKey_stop.Sub(receiver_round3_waitingTime_forSenderToRevealKey_start))
 
+			if(protocolFinishedStatus){
+				wg.Done()
+			}
 
 			if(!senderKeyRevealedStatus){
 
@@ -471,9 +650,6 @@ func Receiver(ctx context.Context,authReceiver *bind.TransactOpts,client *backen
 
 			} else{
 
-				if protocolFinishedStatus {
-						//protocol finished
-				} else{
 
 				receiver_round4_computingTime_extraction_start := time.Now()
 
@@ -512,9 +688,9 @@ func Receiver(ctx context.Context,authReceiver *bind.TransactOpts,client *backen
 
 						log.SetPrefix("\nFairswap - Gas Cost ")
 						log.Println("Receiver Round 4 : ",tx.Cost())
+
 					}
 				}
-			}
 		}	else{
 
 				if(!boolValueEncryptedGateOutput){
@@ -526,6 +702,223 @@ func Receiver(ctx context.Context,authReceiver *bind.TransactOpts,client *backen
 		wg.Done()
 }
 
+func maliciousReceiver_WrongComplain(authReceiver *bind.TransactOpts,client *backends.SimulatedBackend,channel_SenToRec chan []byte,wg *sync.WaitGroup,pairIndex int){
+
+	receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_start := time.Now()
+	//log.Println("\n->Receiver\n Begins")
+	byteArrayFromSenToRec:=<-channel_SenToRec
+
+	receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_stop := time.Now()
+	log.SetPrefix("\nFairswap - Time ")
+	log.Printf("receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : %v \n", receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_stop.Sub(receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_start))
+
+	receiver_round1_computingTime_merkleRootCheck_start := time.Now()
+
+
+	var Receiver_SenToRecObj SenderToReceiverStruct
+	err:=json.Unmarshal(byteArrayFromSenToRec, &Receiver_SenToRecObj)
+	if err != nil {
+			log.Fatal(err)
+	}
+
+	instance,err := import_contracts.NewFairswap(contractAddress[pairIndex],client)
+	if err != nil {
+			log.Fatal(err)
+	}
+
+	Receiver_MerkleRootOfEncInp,err:=instance.EncInputRoot(nil)
+	if err!=nil{
+		log.Fatal(err)
+	}
+
+	Receiver_MerkleRootOfGateTuples,err:=instance.EncCircuitRoot(nil)
+	if err!=nil{
+		log.Fatal(err)
+	}
+
+	Receiver_EncryptedOutputOfGates:=Receiver_SenToRecObj.EncryptedOutputOfGates
+	gateTuples:=initializeCircuitTuples_asAnArray()
+
+	boolValueEncryptedGateOutput:=checkMerkleRootForEncInp(Receiver_EncryptedOutputOfGates,Receiver_MerkleRootOfEncInp)
+	boolValueEncryptedGateTuples:=checkMerkleRootForGateTuples(gateTuples,Receiver_MerkleRootOfGateTuples)
+
+	receiver_round1_computingTime_merkleRootCheck_stop := time.Now()
+	log.SetPrefix("\nFairswap - Time ")
+	log.Printf("receiver_round1_computingTime_merkleRootCheck_time : %v \n", receiver_round1_computingTime_merkleRootCheck_stop.Sub(receiver_round1_computingTime_merkleRootCheck_start))
+
+	//log.Println("\n->Receiver\nboolValueEncryptedGateOutput(comparision between merkleroot of encryptedGateOutputs from contract and calulated encryptedGateOutputs merkleroot): ",boolValueEncryptedGateOutput)
+	//log.Println("\n->Receiver\nboolValueEncryptedGateTuples(comparision between merkleroot of encryptedGateTuples from contract and calulated encryptedGateTuples merkleroot): ",boolValueEncryptedGateTuples)
+
+	if(boolValueEncryptedGateOutput && boolValueEncryptedGateTuples){
+
+		 value:=big.NewInt(100)
+
+		 receiver_round2_commitTime_Accept_start := time.Now()
+
+			tx,err:=instance.Accept(&bind.TransactOpts{
+				From:authReceiver.From,
+				Signer:authReceiver.Signer,
+				Value:value,
+			})
+			if err != nil {
+					log.Fatal(err)
+			}
+			client.Commit()
+
+			receiver_round2_commitTime_Accept_stop := time.Now()
+			log.SetPrefix("\nFairswap - Time ")
+			log.Printf("receiver_round2_commitTime_Accept_time : %v \n", receiver_round2_commitTime_Accept_stop.Sub(receiver_round2_commitTime_Accept_start))
+
+			log.SetPrefix("\nFairswap - Gas Cost ")
+			log.Println("Receiver Round 2 : ",tx.Gas())
+
+
+			//log.Println("\n->Receiver\n Accepted")
+
+			//The contract is in accepted stage
+			//The sender
+			//case 1 : The sender reveals the wrong key.Contract sents the ether to the receiver and the contract stage to finishedAndMaliciousSender
+			//case 2 : The sender doesn't reveal the key within time. senderKeyRevealedStatus remains false after the for loop. Receiver later calls the contract function
+			//			   ReceiverGetEther to get the ether.
+			//case 3 : The sender has revealed the correct key within time.The contract stage goes to keyRevealed and senderKeyRevealedStatus is true after the for loop.
+
+
+		receiver_round3_waitingTime_forSenderToRevealKey_start := time.Now()
+			senderKeyRevealedStatus:=false
+			protocolFinishedStatus:=false
+			var contract_Key [keySize]byte
+			for i:=0;i<waitingTime;i++ {
+				Phase,err:=instance.Phase(nil)
+				if err!=nil{
+					log.Fatal(err)
+				}
+				if(Phase==3){
+					contract_Key,err=instance.Key(nil)
+					if err!=nil{
+						log.Fatal(err)
+					}
+					senderKeyRevealedStatus=true
+					break;
+				}
+				if(Phase==4){
+					protocolFinishedStatus=true
+					//wrong key Revealed
+					break;
+				}
+				time.Sleep(time.Second *1)
+
+			}
+			receiver_round3_waitingTime_forSenderToRevealKey_stop := time.Now()
+			log.SetPrefix("\nFairswap - Time ")
+			log.Printf("receiver_round3_waitingTime_forSenderToRevealKey_time : %v \n", receiver_round3_waitingTime_forSenderToRevealKey_stop.Sub(receiver_round3_waitingTime_forSenderToRevealKey_start))
+
+			if(protocolFinishedStatus){
+				wg.Done()
+			}
+
+			if(!senderKeyRevealedStatus){
+
+				 timeout,err:=instance.Timeout(nil)
+				 if err!=nil{
+							 log.Fatal(err)
+				 }
+
+				 for{
+
+						_,err:=instance.Nowy(&bind.TransactOpts{
+							From:authReceiver.From,
+							Signer:authReceiver.Signer,
+						})
+						if err!=nil{
+									log.Fatal(err)
+						}
+						client.Commit()
+						Now,err:=instance.Now(nil)
+						if err!=nil{
+									log.Fatal(err)
+						}
+						if(Now.Cmp(timeout)==1){
+							 break
+							}
+						time.Sleep(time.Second*1)
+				 }
+
+					//the receiver getting the ether
+					receiver_round3_commitTime_senderKeyNotRevealedGettingEther_start := time.Now()
+					tx,err=instance.ReceiverGetEtherSenderNotRevealedKey(&bind.TransactOpts{
+							From:authReceiver.From,
+							Signer:authReceiver.Signer,
+							Value: nil,
+						})
+					if err!=nil{
+								log.Fatal(err)
+					}
+					client.Commit()
+					receiver_round3_commitTime_senderKeyNotRevealedGettingEther_stop := time.Now()
+					log.SetPrefix("\nFairswap - Gas Cost ")
+					log.Println("Receiver Round 3 (Sender Not Revealed Key) : ",tx.Cost())
+					log.Printf("\nreceiver_round3_commitTime_senderKeyNotRevealedGettingEther_time : %v \n", receiver_round3_commitTime_senderKeyNotRevealedGettingEther_stop.Sub(receiver_round3_commitTime_senderKeyNotRevealedGettingEther_start))
+					//client.Commit()
+
+			} else{
+
+				receiver_round4_computingTime_extraction_start := time.Now()
+
+				maliciousGateTuples:=maliciousInitializeCircuitTuples_asAnArray()
+
+				merkleTreeForGateTuples:=createMerkleTreeForGateTuples(gateTuples)
+			 	merkleTreeForEncInp:=createMerkleTreeForEncInp(Receiver_SenToRecObj.EncryptedOutputOfGates)
+
+			 	complain,_,gateComplain,encodedVectors_ThisGate :=Extract(Receiver_SenToRecObj.EncryptedOutputOfGates,contract_Key,maliciousGateTuples,merkleTreeForEncInp,merkleTreeForGateTuples,Receiver_MerkleRootOfEncInp,Receiver_MerkleRootOfGateTuples)
+
+				receiver_round4_computingTime_extraction_stop := time.Now()
+				log.SetPrefix("\nFairswap - Time ")
+				log.Printf("receiver_round4_computingTime_extraction_time : %v \n", receiver_round4_computingTime_extraction_stop.Sub(receiver_round4_computingTime_extraction_start))
+				//log.Println("\n->Receiver\nDecoded Ouptuts : ",decodedOutputs)
+
+				if(complain==nil){
+						log.SetPrefix("\nFairswap - Gas Cost ")
+						log.Println("Receiver Round 4 : ",0)
+					//log.Println("\n\n->Receiver\n Finished Protocol")
+				} else{
+
+						//complain function being called
+						receiver_round4_commitTime_complain_start := time.Now()
+						tx,err:=instance.Complain(&bind.TransactOpts{
+							From:authReceiver.From,
+							Signer:authReceiver.Signer,
+							Value:nil,
+							//GasLimit:gasLimit,
+						},complain,gateComplain,encodedVectors_ThisGate)
+						if err!=nil{
+							log.Fatal(err)
+						}
+						client.Commit()
+
+						receiver_round4_commitTime_complain_stop := time.Now()
+						log.SetPrefix("\nFairswap - Time ")
+						log.Printf("\nreceiver_round4_commitTime_complain_time : %v \n", receiver_round4_commitTime_complain_stop.Sub(receiver_round4_commitTime_complain_start))
+
+						log.SetPrefix("\nFairswap - Gas Cost ")
+						log.Println("Receiver Round 4 : ",tx.Cost())
+
+					}
+				}
+		}	else{
+
+				if(!boolValueEncryptedGateOutput){
+						//log.Println("\n->Receiver\nThe calculated merkle root of encrypted gate outputs and merkle root of encrypted gate outputs got from the contract didn't match")
+					} else{
+							//log.Println("\n->Receiver\nThe calculated merkle root of gate tuples and merkle root of egate tuples got from the contract didn't match")
+					}
+		}
+		wg.Done()
+}
+
+
+
+
+//generating a  computing party in the blockchain
 func AuthAndAddressGeneration() (*bind.TransactOpts,common.Address){
 
 	privateKey,err:=crypto.GenerateKey()
@@ -543,10 +936,12 @@ func AuthAndAddressGeneration() (*bind.TransactOpts,common.Address){
   return auth,address
 }
 
-func keyGenerate() ([32]byte){
 
-		keyGen := make([]byte, 32)
-		var key [32]byte
+
+	func keyGenerate() ([keySize]byte){
+
+		keyGen := make([]byte, keySize)
+		var key [keySize]byte
 
 	  _, err := rand.Read(keyGen)
     if err != nil {
@@ -559,25 +954,25 @@ func keyGenerate() ([32]byte){
 		return key
 }
 
-func generateFinalKey(key [32]byte,keySizeNeeded int) ([]byte) {
+func generateFinalKey(key [keySize]byte,keySizeNeeded int) ([]byte) {
 	var keyHashed []byte
 	var temp [32]byte
 	var finalKey []byte
 	finalKey = make([]byte, keySizeNeeded)
 
-	for i:=0;i<keySizeNeeded/32;i++ {
+	for i:=0;i<keySizeNeeded/keySize;i++ {
 
 		if(i==0){
 			var keyPlusIndex []byte
 
 			k:=0
-			for j:=0;j<32;j++{
+			for j:=0;j<keySize;j++{
 				keyPlusIndex=append(keyPlusIndex,key[j])
 			}
 			keyPlusIndex=append(keyPlusIndex,byte(k))
 			keyHashed = kec.Keccak256(keyPlusIndex)
 
-			for j:=0;j<32;j++{
+			for j:=0;j<hashFunctionOutputBitSize;j++{
 				temp[j]=keyHashed[j]
 				finalKey[j]=temp[j]
 			}
@@ -586,12 +981,12 @@ func generateFinalKey(key [32]byte,keySizeNeeded int) ([]byte) {
 
 			keyHashed=nil
 
-			for j:=0;j<32;j++{
+			for j:=0;j<hashFunctionOutputBitSize;j++{
 				keyHashed=append(keyHashed,temp[j])
 			}
 			keyHashed=kec.Keccak256(keyHashed)
 
-			for j:=0;j<32;j++{
+			for j:=0;j<hashFunctionOutputBitSize;j++{
 				temp[j]=keyHashed[j]
 				finalKey[i*32+j]=temp[j]
 			}
@@ -600,7 +995,7 @@ func generateFinalKey(key [32]byte,keySizeNeeded int) ([]byte) {
 	return finalKey
 }
 
-func Enc(key [32]byte,plainText []byte) ([]byte) {
+func Encrypt(key [keySize]byte,plainText []byte) ([]byte) {
 
 			finalKey:=generateFinalKey(key,len(plainText))
 			var encryptedtext []byte
@@ -610,7 +1005,7 @@ func Enc(key [32]byte,plainText []byte) ([]byte) {
 			return encryptedtext
 }
 
-func Decrypt(key [32]byte,encryptedtext []byte) ([]byte){
+func Decrypt(key [keySize]byte,encryptedtext []byte) ([]byte){
 
 			finalKey:=generateFinalKey(key,len(encryptedtext))
 			var plainText []byte
@@ -637,15 +1032,14 @@ func Hash(_toBeHashed []byte) ([32]byte){
 	}
 
 	return Hashed
-
 }
 
-func fnKeycommit(key [keyLength]byte) ([hashFunctionOutputBitSize]byte){
+func fnKeycommit(key [keySize]byte) ([hashFunctionOutputBitSize]byte){
 
 			var toBEHashedKey []byte
 			var HashedKey [hashFunctionOutputBitSize]byte
 
-			for j:=0;j<keyLength;j++{
+			for j:=0;j<keySize;j++{
 				toBEHashedKey=append(toBEHashedKey,key[j])
 			}
 
@@ -674,12 +1068,12 @@ func setMaxLinesToAGate(object *SenderToContractStruct){
 }
 
 
+func FileRead(filePath string) ([][]byte){
 
-func FileRead() ([][]byte){
 	var currentByte int64 = 0
 	fileBuffer := make([]byte, buffer_size)
-	FileChunks := make([][]byte, noOfInputGates)
-	file, err := os.Open("a.txt")
+	FileChunks := make([][]byte, noOfFileChunks)
+	file, err := os.Open(filePath)
 	if err != nil {
 			log.Fatal(err)
 	}
@@ -687,11 +1081,11 @@ func FileRead() ([][]byte){
 	for {
 			n,err := file.ReadAt(fileBuffer, currentByte)
 			if err!=nil{
-				log.Println(err)
+				log.Fatal(err)
 			}
 			currentByte += int64(buffer_size)
 			fileBuffer=fileBuffer[:n]
-			if count==noOfInputGates{
+			if count==noOfFileChunks{
 					break
 			}
 			FileChunks[count] = make([]byte, buffer_size)
@@ -704,6 +1098,7 @@ func FileRead() ([][]byte){
 	file.Close()
 	return FileChunks
 }
+
 
 func initializeCircuitTuples_asAnArray() ([][gateTupleSize]byte){
 
@@ -911,14 +1306,14 @@ func createMerkleRootForGateTuples(gateTuples [][gateTupleSize]byte) ([hashFunct
 }
 
 
-func Encode(inputVectors [][]byte,key [32]byte,gateTuples [][gateTupleSize]byte,MRx [hashFunctionOutputBitSize]byte) ([][]byte,[][]byte)  {
+func Encode(inputVectors [][]byte,key [keySize]byte,gateTuples [][gateTupleSize]byte,MRx [hashFunctionOutputBitSize]byte) ([][]byte,[][]byte)  {
 
 	out:=make([][]byte,totalNumberOfGates)
 	z:=make([][]byte,totalNumberOfGates)
 
 	for i:=0;i<noOfInputGates;i++ {
 			out[i]=inputVectors[i]
-			temp:=Enc(key,out[i])
+			temp:=Encrypt(key,out[i])
 			z[i]=temp
 	}
 
@@ -967,7 +1362,7 @@ func Encode(inputVectors [][]byte,key [32]byte,gateTuples [][gateTupleSize]byte,
 					}
 			}
 
-			temp:=Enc(key,out[i])
+			temp:=Encrypt(key,out[i])
 			z[i]=temp
 		}
 
@@ -1017,12 +1412,213 @@ func Encode(inputVectors [][]byte,key [32]byte,gateTuples [][gateTupleSize]byte,
 					}
 			}
 
-			temp:=Enc(key,out[i])
+			temp:=Encrypt(key,out[i])
 			z[i]=temp
 		}
 
 	return z,out
 }
+
+func maliciousSender_WrongEncryption(authSender *bind.TransactOpts,client *backends.SimulatedBackend,channel_SenToRec chan []byte,wg *sync.WaitGroup,pairIndex int){
+
+	sender_round1_computingTime_calculatingVariables_start := time.Now()
+
+	inputVectors:=FileRead()
+
+	var SenToConObject SenderToContractStruct
+	var SenToRecObject SenderToReceiverStruct
+
+	gateTuples:=initializeCircuitTuples_asAnArray()
+	MRgateTuples:=createMerkleRootForGateTuples(gateTuples)
+	maliciousGateTuples:=maliciousInitializeCircuitTuples_asAnArray()
+	key:=keyGenerate()
+	keyCommit:=fnKeycommit(key)
+	MRinp:=createMerkleRootForInputVectors(inputVectors)
+	encodedGateOutputs,_:=Encode(inputVectors,key,maliciousGateTuples,MRinp)
+	MRencout:=createMerkleRootForEncInp(encodedGateOutputs)
+
+	setPrice(&SenToConObject)
+	setTotalNumberOfGates(&SenToConObject)
+	setMaxLinesToAGate(&SenToConObject)
+	SenToConObject.Keycommit=keyCommit
+	SenToConObject.MerkleRootOfEncInp=MRencout
+	SenToConObject.MerkleRootOfCircuit=MRgateTuples
+
+	sender_round1_computingTime_calculatingVariables_stop:=time.Now()
+	log.SetPrefix("\nFairswap - Time ")
+	log.Printf("sender_round1_computingTime_calculatingVariables_time : %v \n", sender_round1_computingTime_calculatingVariables_stop.Sub(sender_round1_computingTime_calculatingVariables_start))
+
+	var err error
+	var tx *types.Transaction
+	sender_round1_commitTime_deployingContract_start := time.Now()
+  contractAddress[pairIndex],tx,_, err=import_contracts.DeployFairswap(
+		authSender,
+		client,
+		&SenToConObject.Price,
+		SenToConObject.Keycommit,
+		SenToConObject.MerkleRootOfEncInp,
+		SenToConObject.MerkleRootOfCircuit,
+		&SenToConObject.TotalNumberOfGates,
+		&SenToConObject.MaxInputLinesToAGate,
+	)
+	if err!=nil{
+		log.Fatal(err)
+	}
+	client.Commit()
+
+	instance,err:= import_contracts.NewFairswap(contractAddress[pairIndex],client)
+	if err != nil {
+			log.Fatal(err)
+	}
+
+	sender_round1_commitTime_deployingContract_stop := time.Now()
+	log.SetPrefix("\nFairswap - Time ")
+	log.Printf("sender_round1_commitTime_deployingContract_time : %v \n", sender_round1_commitTime_deployingContract_stop.Sub(sender_round1_commitTime_deployingContract_start))
+	log.SetPrefix("\nFairswap - Gas Cost ")
+	log.Println("Sender Round 1 : ",tx.Gas())
+
+
+
+	sender_round1_communicationTime_sendingEncryptedGateOutputs_start := time.Now()
+
+
+	SenToRecObject.EncryptedOutputOfGates=encodedGateOutputs
+
+	byteArrayFromSenToRec,err := json.Marshal(SenToRecObject)
+	if err != nil {
+		//log.Println("error:", err)
+	}
+
+	channel_SenToRec<-byteArrayFromSenToRec
+
+	sender_round1_communicationTime_sendingEncryptedGateOutputs_stop := time.Now()
+	log.SetPrefix("\nFairswap - Time ")
+	log.Printf("sender_round1_communicationTime_sendingEncryptedGateOutputs_time : %v \n", sender_round1_communicationTime_sendingEncryptedGateOutputs_stop.Sub(sender_round1_communicationTime_sendingEncryptedGateOutputs_start))
+
+
+	sender_round2_waitingTime_forReceiverToAccept_start := time.Now()
+
+
+
+	receiverAcceptedStatus:=false
+	for i:=0;i<waitingTime;i++ {
+
+		Phase,err:=instance.Phase(nil)
+		if err!=nil{
+			log.Fatal(err)
+		}
+		if(Phase==2){
+			receiverAcceptedStatus=true
+			break;
+		}
+		time.Sleep(time.Second *1)
+
+	}
+
+
+	sender_round2_waitingTime_forReceiverToAccept_stop := time.Now()
+	log.SetPrefix("\nFairswap - Time ")
+	log.Printf("sender_round2_waitingTime_forReceiverToAccept_time : %v \n", sender_round2_waitingTime_forReceiverToAccept_stop.Sub(sender_round2_waitingTime_forReceiverToAccept_start))
+
+
+	if(!receiverAcceptedStatus){
+			//Receiver has not accepted within time
+			}else{
+
+						 sender_round3_commitTime_revealKey_start := time.Now()
+						 tx,err=instance.RevealKey(&bind.TransactOpts{
+									From:authSender.From,
+									Signer:authSender.Signer,
+									Value: nil,
+							},key)
+							if err!=nil{
+								log.Fatal(err)
+							}
+							client.Commit()
+							//log.Println("\n->Sender\nKeyRevealed")
+							sender_round3_commitTime_revealKey_stop := time.Now()
+							log.SetPrefix("\nFairswap - Time ")
+							log.Printf("sender_round3_commitTime_revealKey_time : %v \n", sender_round3_commitTime_revealKey_stop.Sub(sender_round3_commitTime_revealKey_start))
+							//client.Commit()
+							log.SetPrefix("\nFairswap - Gas Cost ")
+							log.Println("Sender Round 3 : ",tx.Gas())
+
+
+			sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_start:=time.Now()
+
+			for i:=0;i<waitingTime;i++{
+
+					Phase,err:=instance.Phase(nil)
+					if err!=nil{
+						log.Fatal(err)
+					}
+					if(Phase==4){
+						break
+					}
+					time.Sleep(time.Second *1)
+			}
+			sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_stop:=time.Now()
+			log.SetPrefix("\nFairswap - Time ")
+			log.Printf("sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_time : %v \n", sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_stop.Sub(sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_start))
+
+			//gasLimit := uint64(10000000000)
+			//the sender getting the ether
+			Phase,err:=instance.Phase(nil)
+			if err!=nil{
+				log.Fatal(err)
+			}
+
+			if(Phase==3){
+
+					timeout,err:=instance.Timeout(nil)
+					if err!=nil{
+									log.Fatal(err)
+					}
+
+
+					for{
+						_,err:=instance.Nowy(&bind.TransactOpts{
+							 From:authSender.From,
+							 Signer:authSender.Signer,
+						 })
+						 if err!=nil{
+									 log.Fatal(err)
+						 }
+						 client.Commit()
+
+						 Now,err:=instance.Now(nil)
+						 if err!=nil{
+									 log.Fatal(err)
+						 }
+
+						 if(Now.Cmp(timeout)==1){
+								break
+						 }
+
+						 time.Sleep(time.Second*1)
+					}
+
+					sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_start:=time.Now()
+					tx,err=instance.SenderGetEtherReceiverNoComplainMessage(&bind.TransactOpts{
+							From:authSender.From,
+							Signer:authSender.Signer,
+						})
+					if err!=nil{
+								log.Fatal(err)
+					}
+					client.Commit()
+
+					log.SetPrefix("\nFairswap - Gas Cost ")
+					log.Println("Sender Round 4 ",tx.Gas())
+					sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_stop:=time.Now()
+					log.SetPrefix("\nFairswap - Time ")
+					log.Printf("sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_time : %v \n", sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_stop.Sub(sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_start))
+
+			}
+	}
+	wg.Done()
+}
+
 
 func createMerkleRootForEncInp(encryptedGateOutputs [][]byte) ([hashFunctionOutputBitSize]byte){
 
