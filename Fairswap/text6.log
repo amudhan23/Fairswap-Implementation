@@ -207,3 +207,210 @@ Naive Protocol - Time 2019/11/05 09:18:00 sender_round4_commitTime_getEtherOnSuc
 Naive Protocol - Gas Cost 2019/11/05 09:18:00 Sender Round 4  35562
 
 Naive Protocol - Time 2019/11/05 09:18:00 sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_time : 7.529767ms 
+2019/11/07 12:44:03 open : no such file or directory
+2019/11/07 12:44:44 open : no such file or directory
+2019/11/07 12:45:23 open : no such file or directory
+
+Naive Protocol - Time 2019/11/07 12:47:02 sender_round1_computingTime_calculatingVariables_time : 194.202µs 
+
+Naive Protocol - Time 2019/11/07 12:47:02 sender_round1_computingTime_calculatingVariables_time : 207.504µs 
+
+Naive Protocol - Time 2019/11/07 12:47:02 sender_round1_commitTime_deployingContract_time : 44.261325ms 
+
+Naive Protocol - Gas Cost 2019/11/07 12:47:02 Sender Round 1 :  1613875
+
+Naive Protocol - Time 2019/11/07 12:47:02 sender_round1_communicationTime_sendingEncryptedGateOutputs_time : 22.789µs 
+
+Naive Protocol - Time 2019/11/07 12:47:02 receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : 44.600089ms 
+
+Naive Protocol - Time 2019/11/07 12:47:02 sender_round1_commitTime_deployingContract_time : 46.466078ms 
+
+Naive Protocol - Gas Cost 2019/11/07 12:47:02 Sender Round 1 :  1613939
+
+Naive Protocol - Time 2019/11/07 12:47:02 sender_round1_communicationTime_sendingEncryptedGateOutputs_time : 14.297µs 
+
+Naive Protocol - Time 2019/11/07 12:47:02 receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : 46.949241ms 
+
+Naive Protocol - Time 2019/11/07 12:47:02 receiver_round1_computingTime_merkleRootCheck_time : 961.922µs 
+
+Naive Protocol - Time 2019/11/07 12:47:02 receiver_round2_commitTime_Accept_time : 3.919375ms 
+
+Naive Protocol - Gas Cost 2019/11/07 12:47:02 Receiver Round 2 :  53036
+
+Naive Protocol - Time 2019/11/07 12:47:02 receiver_round1_computingTime_merkleRootCheck_time : 7.868799ms 
+
+Naive Protocol - Time 2019/11/07 12:47:02 receiver_round2_commitTime_Accept_time : 3.899505ms 
+
+Naive Protocol - Gas Cost 2019/11/07 12:47:02 Receiver Round 2 :  53036
+
+Naive Protocol - Time 2019/11/07 12:47:03 sender_round2_waitingTime_forReceiverToAccept_time : 1.002885086s 
+
+Naive Protocol - Time 2019/11/07 12:47:03 sender_round2_waitingTime_forReceiverToAccept_time : 1.001016246s 
+
+Naive Protocol - Time 2019/11/07 12:47:03 sender_round3_commitTime_revealKey_time : 38.843922ms 
+
+Naive Protocol - Gas Cost 2019/11/07 12:47:03 Sender Round 3 :  76650
+
+Naive Protocol - Time 2019/11/07 12:47:03 sender_round3_commitTime_revealKey_time : 39.477812ms 
+
+Naive Protocol - Gas Cost 2019/11/07 12:47:03 Sender Round 3 :  76650
+
+Naive Protocol - Time 2019/11/07 12:47:04 receiver_round3_waitingTime_forSenderToRevealKey_time : 2.026788926s 
+
+Naive Protocol - Time 2019/11/07 12:47:04 receiver_round3_waitingTime_forSenderToRevealKey_time : 2.022900606s 
+
+Naive Protocol - Time 2019/11/07 12:47:04 receiver_round4_computingTime_extraction_time : 3.184931ms 
+
+Naive Protocol - Gas Cost 2019/11/07 12:47:04 Receiver Round 4 :  0
+
+Naive Protocol - Time 2019/11/07 12:47:04 receiver_round4_computingTime_extraction_time : 4.165117ms 
+
+Naive Protocol - Gas Cost 2019/11/07 12:47:04 Receiver Round 4 :  0
+
+Naive Protocol - Time 2019/11/07 12:48:03 sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_time : 1m0.034452064s 
+
+Naive Protocol - Time 2019/11/07 12:48:03 sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_time : 1m0.033850027s 
+
+Naive Protocol - Gas Cost 2019/11/07 12:48:05 Sender Round 4  35562
+
+Naive Protocol - Time 2019/11/07 12:48:05 sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_time : 13.930956ms 
+
+Naive Protocol - Gas Cost 2019/11/07 12:48:06 Sender Round 4  35562
+
+Naive Protocol - Time 2019/11/07 12:48:06 sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_time : 13.981514ms 
+2019/11/07 12:49:24 open : no such file or directory
+2019/11/07 12:51:30 open : no such file or directory
+
+Fairswap - Time 2019/11/07 12:59:50 sender_round1_computingTime_calculatingVariables_time : 251.661µs 
+
+Fairswap - Time 2019/11/07 12:59:50 sender_round1_computingTime_calculatingVariables_time : 275.239µs 
+
+Fairswap - Time 2019/11/07 12:59:50 sender_round1_commitTime_deployingContract_time : 20.492838ms 
+
+Fairswap - Gas Cost 2019/11/07 12:59:50 Sender Round 1 :  2318788
+
+Fairswap - Time 2019/11/07 12:59:50 sender_round1_communicationTime_sendingEncryptedGateOutputs_time : 27.198µs 
+
+Fairswap - Time 2019/11/07 12:59:50 receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : 20.911232ms 
+
+Fairswap - Time 2019/11/07 12:59:50 sender_round1_commitTime_deployingContract_time : 22.383178ms 
+
+Fairswap - Gas Cost 2019/11/07 12:59:50 Sender Round 1 :  2318788
+
+Fairswap - Time 2019/11/07 12:59:50 sender_round1_communicationTime_sendingEncryptedGateOutputs_time : 9.264µs 
+
+Fairswap - Time 2019/11/07 12:59:50 receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : 22.845632ms 
+
+Fairswap - Time 2019/11/07 12:59:50 receiver_round1_computingTime_merkleRootCheck_time : 1.999299ms 
+
+Fairswap - Time 2019/11/07 12:59:50 receiver_round1_computingTime_merkleRootCheck_time : 3.477656ms 
+
+Fairswap - Time 2019/11/07 12:59:50 receiver_round2_commitTime_Accept_time : 4.885979ms 
+
+Fairswap - Gas Cost 2019/11/07 12:59:50 Receiver Round 2 :  53080
+
+Fairswap - Time 2019/11/07 12:59:50 receiver_round2_commitTime_Accept_time : 6.929515ms 
+
+Fairswap - Gas Cost 2019/11/07 12:59:50 Receiver Round 2 :  53080
+
+Fairswap - Time 2019/11/07 12:59:51 sender_round2_waitingTime_forReceiverToAccept_time : 1.002536751s 
+
+Fairswap - Time 2019/11/07 12:59:51 sender_round2_waitingTime_forReceiverToAccept_time : 1.070710521s 
+
+Fairswap - Time 2019/11/07 12:59:51 sender_round3_commitTime_revealKey_time : 77.080908ms 
+
+Fairswap - Gas Cost 2019/11/07 12:59:51 Sender Round 3 :  65191
+
+Fairswap - Time 2019/11/07 12:59:51 sender_round3_commitTime_revealKey_time : 48.58311ms 
+
+Fairswap - Gas Cost 2019/11/07 12:59:51 Sender Round 3 :  65127
+
+Fairswap - Time 2019/11/07 12:59:52 receiver_round3_waitingTime_forSenderToRevealKey_time : 2.06701894s 
+
+Fairswap - Time 2019/11/07 12:59:52 receiver_round4_computingTime_extraction_time : 601.698µs 
+
+Fairswap - Gas Cost 2019/11/07 12:59:52 Receiver Round 4 :  0
+
+Fairswap - Time 2019/11/07 12:59:52 receiver_round3_waitingTime_forSenderToRevealKey_time : 2.062275279s 
+
+Fairswap - Time 2019/11/07 12:59:52 receiver_round4_computingTime_extraction_time : 496.902µs 
+
+Fairswap - Gas Cost 2019/11/07 12:59:52 Receiver Round 4 :  0
+
+Fairswap - Time 2019/11/07 13:00:32 sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_time : 40.062717393s 
+
+Fairswap - Time 2019/11/07 13:00:32 sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_time : 40.021375908s 
+
+Fairswap - Gas Cost 2019/11/07 13:00:34 Sender Round 4  35564
+
+Fairswap - Time 2019/11/07 13:00:34 sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_time : 24.337097ms 
+
+Fairswap - Gas Cost 2019/11/07 13:00:34 Sender Round 4  35564
+
+Fairswap - Time 2019/11/07 13:00:34 sender_round4_commitTime_getEtherOnSuccesfulCompletionOfProtocol_time : 18.453112ms 
+
+Fairswap - Time 2019/11/07 13:12:57 sender_round1_computingTime_calculatingVariables_time : 143.873µs 
+
+Fairswap - Time 2019/11/07 13:12:57 sender_round1_computingTime_calculatingVariables_time : 168.392µs 
+
+Fairswap - Time 2019/11/07 13:12:57 sender_round1_commitTime_deployingContract_time : 20.357917ms 
+
+Fairswap - Gas Cost 2019/11/07 13:12:57 Sender Round 1 :  2318788
+
+Fairswap - Time 2019/11/07 13:12:57 sender_round1_communicationTime_sendingEncryptedGateOutputs_time : 26.316µs 
+
+Fairswap - Time 2019/11/07 13:12:57 receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : 20.648033ms 
+
+Fairswap - Time 2019/11/07 13:12:57 sender_round1_commitTime_deployingContract_time : 22.492993ms 
+
+Fairswap - Gas Cost 2019/11/07 13:12:57 Sender Round 1 :  2318724
+
+Fairswap - Time 2019/11/07 13:12:57 sender_round1_communicationTime_sendingEncryptedGateOutputs_time : 27.818µs 
+
+Fairswap - Time 2019/11/07 13:12:57 receiver_round1_computingTime_merkleRootCheck_time : 2.253009ms 
+
+Fairswap - Time 2019/11/07 13:12:57 receiver_round1_waitingTime_forReceivingEncryptedGateOutputs_time : 22.952ms 
+
+Fairswap - Time 2019/11/07 13:12:57 receiver_round1_computingTime_merkleRootCheck_time : 3.422511ms 
+
+Fairswap - Time 2019/11/07 13:12:57 receiver_round2_commitTime_Accept_time : 4.648327ms 
+
+Fairswap - Gas Cost 2019/11/07 13:12:57 Receiver Round 2 :  53080
+
+Fairswap - Time 2019/11/07 13:12:57 receiver_round2_commitTime_Accept_time : 5.811118ms 
+
+Fairswap - Gas Cost 2019/11/07 13:12:57 Receiver Round 2 :  53080
+
+Fairswap - Time 2019/11/07 13:12:58 sender_round2_waitingTime_forReceiverToAccept_time : 1.002558482s 
+
+Fairswap - Time 2019/11/07 13:12:58 sender_round2_waitingTime_forReceiverToAccept_time : 1.000707398s 
+
+Fairswap - Time 2019/11/07 13:12:58 sender_round3_commitTime_revealKey_time : 70.098776ms 
+
+Fairswap - Gas Cost 2019/11/07 13:12:58 Sender Round 3 :  65191
+
+Fairswap - Time 2019/11/07 13:12:58 sender_round3_commitTime_revealKey_time : 70.75904ms 
+
+Fairswap - Gas Cost 2019/11/07 13:12:58 Sender Round 3 :  65191
+
+Fairswap - Time 2019/11/07 13:12:59 receiver_round3_waitingTime_forSenderToRevealKey_time : 2.058127428s 
+
+Fairswap - Time 2019/11/07 13:12:59 receiver_round4_computingTime_extraction_time : 543.939µs 
+
+Fairswap - Time 2019/11/07 13:12:59 receiver_round3_waitingTime_forSenderToRevealKey_time : 2.06357351s 
+
+Fairswap - Time 2019/11/07 13:12:59 receiver_round4_computingTime_extraction_time : 389.525µs 
+
+Fairswap - Time 2019/11/07 13:13:01 
+receiver_round4_commitTime_complain_time : 1.826545209s 
+
+Fairswap - Gas Cost 2019/11/07 13:13:01 Receiver Round 4 :  682285
+
+Fairswap - Time 2019/11/07 13:13:01 sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_time : 2.824218608s 
+
+Fairswap - Time 2019/11/07 13:13:01 
+receiver_round4_commitTime_complain_time : 1.85752034s 
+
+Fairswap - Gas Cost 2019/11/07 13:13:01 Receiver Round 4 :  682157
+
+Fairswap - Time 2019/11/07 13:13:02 sender_round4_waitingTime_forReceiverToApproveOrProduceComplain_time : 3.82432407s 

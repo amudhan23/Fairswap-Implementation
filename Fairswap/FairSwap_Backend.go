@@ -1423,7 +1423,9 @@ func maliciousSender_WrongEncryption(authSender *bind.TransactOpts,client *backe
 
 	sender_round1_computingTime_calculatingVariables_start := time.Now()
 
-	inputVectors:=FileRead()
+	inputTextFilePath:=os.Args[5]
+	inputVectors:=FileRead(inputTextFilePath)
+
 
 	var SenToConObject SenderToContractStruct
 	var SenToRecObject SenderToReceiverStruct
